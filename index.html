@@ -152,6 +152,33 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 .btn-send:hover,.btn-send:active{background:rgba(0,229,255,.28);box-shadow:0 0 12px rgba(0,229,255,.28);}
 .guest-counter{font-size:10px;color:rgba(255,200,0,.6);text-align:center;padding:4px 0 2px;letter-spacing:.04em;}
 
+/* ── DECISION CARD ── */
+.decision-card{margin-top:4px;background:linear-gradient(180deg,rgba(0,229,255,.055),rgba(0,229,255,.02));border:1px solid rgba(0,229,255,.28);border-radius:18px;padding:16px 16px 14px;box-shadow:0 0 30px rgba(0,229,255,.06);}
+.dc-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.dc-header-icon{color:var(--cyan);flex-shrink:0;}
+.dc-header-title{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--cyan);}
+.dc-section{margin-bottom:14px;}
+.dc-section:last-child{margin-bottom:0;}
+.dc-section-label{font-size:10px;letter-spacing:.1em;color:rgba(0,229,255,.65);text-transform:uppercase;margin-bottom:6px;font-weight:600;}
+.dc-goal{font-size:14px;color:rgba(255,255,255,.9);line-height:1.55;}
+.dc-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.dc-option{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 12px;}
+.dc-option-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:7px;}
+.dc-option-list{list-style:none;font-size:12px;line-height:1.6;}
+.dc-option-list li{padding-left:14px;position:relative;margin-bottom:3px;}
+.dc-benefit::before{content:'+';position:absolute;left:0;color:#4ade80;font-weight:700;}
+.dc-risk::before{content:'!';position:absolute;left:2px;color:#ff8a65;font-weight:700;}
+.dc-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid rgba(255,255,255,.08);}
+.dc-table{width:100%;border-collapse:collapse;font-size:12px;min-width:280px;}
+.dc-table th,.dc-table td{padding:8px 10px;text-align:left;}
+.dc-table th{background:rgba(0,229,255,.08);color:var(--cyan);font-weight:600;font-size:10px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
+.dc-table td{border-top:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.82);}
+.dc-table tr:first-child td{border-top:none;}
+.dc-assumptions{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;padding-left:14px;}
+.dc-assumptions li{margin-bottom:3px;}
+.dc-next-step{font-size:13px;color:rgba(255,255,255,.92);background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.22);border-radius:11px;padding:10px 13px;line-height:1.55;}
+@media(max-width:420px){.dc-options{grid-template-columns:1fr;}}
+
 ::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(0,229,255,.18);border-radius:2px;}
@@ -378,6 +405,31 @@ const DEMO = {
     "Good question! 🤔 The simplest approach that actually gets done usually beats the perfect plan that never starts.\n\nWhat's the specific situation you're working through?",
     "Try this 👋: focus on one task, 25 minutes at a time, short break after. Simple, and it works.\n\nWant help prioritizing what to focus on first?",
   ],
+  decision: [
+    "Good one to think through carefully 🤔\n\n```decision-card\n{\"goal\":\"Decide where to park an emergency fund so it's safe and accessible.\",\"options\":[{\"name\":\"Savings Account\",\"benefits\":[\"Instant access\",\"Zero risk to principal\",\"Easy to set up\"],\"risks\":[\"Returns barely beat inflation\"]},{\"name\":\"Liquid Mutual Fund\",\"benefits\":[\"Higher potential returns\"],\"risks\":[\"Value can dip right when you need cash\",\"Withdrawal can take 1-3 days\",\"Possible exit load if redeemed early\"]}],\"comparison\":[{\"criteria\":\"Liquidity\",\"values\":{\"Savings Account\":\"Instant\",\"Liquid Mutual Fund\":\"1-3 days\"}},{\"criteria\":\"Risk\",\"values\":{\"Savings Account\":\"Very low\",\"Liquid Mutual Fund\":\"Low-medium\"}},{\"criteria\":\"Typical Returns\",\"values\":{\"Savings Account\":\"~3-4%\",\"Liquid Mutual Fund\":\"~6-8%\"}}],\"assumptions\":[\"Assumes the fund may need to be withdrawn on short notice\",\"Actual returns vary by bank and fund\"],\"nextStep\":\"Keep 3-6 months of expenses in a savings account for instant access, and only route extra buffer into a liquid fund once that base is fully covered.\"}\n```",
+    "Let's break this down properly 📊\n\n```decision-card\n{\"goal\":\"Choose the better option for this decision given the trade-offs involved.\",\"options\":[{\"name\":\"Option A\",\"benefits\":[\"Faster to get started\",\"Lower upfront cost\"],\"risks\":[\"May not scale well long-term\"]},{\"name\":\"Option B\",\"benefits\":[\"Stronger long-term fit\"],\"risks\":[\"Higher upfront cost\",\"Steeper learning curve\"]}],\"comparison\":[{\"criteria\":\"Upfront Cost\",\"values\":{\"Option A\":\"Low\",\"Option B\":\"Higher\"}},{\"criteria\":\"Long-term Fit\",\"values\":{\"Option A\":\"Moderate\",\"Option B\":\"Strong\"}}],\"assumptions\":[\"This is illustrative — share more specifics for a tailored comparison\"],\"nextStep\":\"Tell me more about your priorities (budget, timeline, must-haves) and I'll tailor this comparison to your actual situation.\"}\n```",
+  ],
+};
+
+/* ═══════════════════════════════════════
+   DECISION MODE — detects comparison questions
+   and asks Sofia for a structured decision-card
+   fenced block (parsed + rendered by DecisionUI)
+═══════════════════════════════════════ */
+const DecisionMode = {
+  isDecisionQuery(text) {
+    const t = (text || '').toLowerCase();
+    const patterns = [
+      /\bvs\.?\b/, /\bversus\b/, /which (one )?is better/, /which (should|would) i/,
+      /should i (choose|pick|go with|use|buy|select|opt for)/, /compare\b.*\band\b/,
+      /pros and cons/, /better choice/, /which option/, /\bor\b.*\?\s*$/,
+    ];
+    return patterns.some(p => p.test(t));
+  },
+
+  buildInstruction(text) {
+    return text + "\n\n[SYSTEM: This is a decision/comparison question. Respond with ONLY one fenced code block labeled \"decision-card\" containing valid JSON in exactly this shape, nothing outside the block:\n{\"goal\":\"short restatement of what the user is deciding\",\"options\":[{\"name\":\"Option name\",\"benefits\":[\"...\"],\"risks\":[\"...\"]}],\"comparison\":[{\"criteria\":\"criterion name\",\"values\":{\"Option name\":\"short value\"}}],\"assumptions\":[\"...\"],\"nextStep\":\"one concrete recommended next step\"}\nBe concise and honest about missing info. Option names inside comparison.values must exactly match options[].name.]";
+  },
 };
 
 /* ═══════════════════════════════════════
@@ -538,15 +590,26 @@ const AuthUI = {
    API CLIENT — abstracted for Phase 2 switch
 ═══════════════════════════════════════ */
 const SofiaAPI = {
-  async chat(messages, category) {
-    if (State.isDemo || CONFIG.mode === 'byok-fallback-demo') return this._demoResponse(category);
-    if (CONFIG.mode === 'managed') return this._callBackend(messages, category);
-    if (State.apiKey) return this._callDirect(messages, category);
+  async chat(messages, category, decision) {
+    if (State.isDemo || CONFIG.mode === 'byok-fallback-demo') return this._demoResponse(category, decision);
+    if (CONFIG.mode === 'managed') return this._callBackend(messages, category, decision);
+    if (State.apiKey) return this._callDirect(messages, category, decision);
     // No backend yet and no dev key — use demo content silently for real users (no bill, no banner)
-    return this._demoResponse(category);
+    return this._demoResponse(category, decision);
   },
 
-  async _callDirect(messages, category) {
+  // Only the outgoing API copy of the last user turn is annotated with the
+  // decision-card instruction — the message as stored/displayed in chat stays untouched.
+  _prepareMessages(messages, decision) {
+    if (!decision || !messages.length) return messages;
+    const last = messages[messages.length - 1];
+    if (last.role !== 'user') return messages;
+    const copy = messages.slice();
+    copy[copy.length - 1] = { ...last, content: DecisionMode.buildInstruction(last.content) };
+    return copy;
+  },
+
+  async _callDirect(messages, category, decision) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -557,7 +620,7 @@ const SofiaAPI = {
       },
       body: JSON.stringify({
         model: CONFIG.model, max_tokens: CONFIG.maxTokens,
-        system: PROMPTS[category], messages: messages.slice(-CONFIG.maxHistory),
+        system: PROMPTS[category], messages: this._prepareMessages(messages.slice(-CONFIG.maxHistory), decision),
       }),
     });
     if (!res.ok) {
@@ -568,20 +631,20 @@ const SofiaAPI = {
     return data.content[0].text;
   },
 
-  async _callBackend(messages, category) {
+  async _callBackend(messages, category, decision) {
     const res = await fetch(`${CONFIG.backendUrl}/chat`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, category }), credentials: 'include',
+      body: JSON.stringify({ messages: this._prepareMessages(messages, decision), category, decision: !!decision }), credentials: 'include',
     });
     if (!res.ok) throw new Error(`Backend error ${res.status}`);
     const data = await res.json();
     return data.reply;
   },
 
-  async _demoResponse(category) {
+  async _demoResponse(category, decision) {
     const delay = CONFIG.demoDelay.min + Math.random() * (CONFIG.demoDelay.max - CONFIG.demoDelay.min);
     await new Promise(r => setTimeout(r, delay));
-    const pool = DEMO[category] || DEMO.general;
+    const pool = decision ? DEMO.decision : (DEMO[category] || DEMO.general);
     return pool[Math.floor(Math.random() * pool.length)];
   },
 };
@@ -640,9 +703,18 @@ const UI = {
     const container = document.getElementById('messages');
     const div = document.createElement('div');
     div.className = `msg ${role}`;
-    div.innerHTML = role === 'sofia'
-      ? `<div class="msg-avatar"></div><div class="msg-bubble">${this._formatText(text)}</div>`
-      : `<div class="msg-bubble">${this._escapeHtml(text)}</div>`;
+    if (role === 'sofia') {
+      const decision = DecisionUI.extract(text);
+      if (decision) {
+        const beforeHtml = decision.before ? this._formatText(decision.before) : '';
+        const afterHtml = decision.after ? this._formatText(decision.after) : '';
+        div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${beforeHtml}${DecisionUI.render(decision.data)}${afterHtml}</div>`;
+      } else {
+        div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${this._formatText(text)}</div>`;
+      }
+    } else {
+      div.innerHTML = `<div class="msg-bubble">${this._escapeHtml(text)}</div>`;
+    }
     container.appendChild(div);
     this._scrollBottom(container);
     return div;
@@ -667,6 +739,70 @@ const UI = {
     t = t.replace(/^- (.*?)$/gm, '• $1');
     t = t.replace(/\n/g, '<br>');
     return t;
+  },
+};
+
+/* ═══════════════════════════════════════
+   DECISION CARD RENDERER — parses a
+   ```decision-card fenced JSON block out of
+   a Sofia reply and renders it as a themed card
+═══════════════════════════════════════ */
+const DecisionUI = {
+  extract(text) {
+    const re = /```decision-card\s*\n([\s\S]*?)```/;
+    const m = re.exec(text || '');
+    if (!m) return null;
+    let data;
+    try { data = JSON.parse(m[1].trim()); } catch (e) { return null; }
+    if (!data || !Array.isArray(data.options)) return null;
+    return { data, before: text.slice(0, m.index).trim(), after: text.slice(m.index + m[0].length).trim() };
+  },
+
+  render(data) {
+    const esc = UI._escapeHtml;
+    const goal = esc(data.goal || '');
+    const options = Array.isArray(data.options) ? data.options : [];
+    const comparison = Array.isArray(data.comparison) ? data.comparison : [];
+    const assumptions = Array.isArray(data.assumptions) ? data.assumptions : [];
+    const nextStep = esc(data.nextStep || '');
+
+    const optionsHtml = options.map(o => `
+      <div class="dc-option">
+        <div class="dc-option-name">${esc(o.name || '')}</div>
+        <ul class="dc-option-list">
+          ${(o.benefits || []).map(b => `<li class="dc-benefit">${esc(b)}</li>`).join('')}
+          ${(o.risks || []).map(r => `<li class="dc-risk">${esc(r)}</li>`).join('')}
+        </ul>
+      </div>`).join('');
+
+    let tableHtml = '';
+    if (comparison.length && options.length) {
+      const names = options.map(o => o.name || '');
+      tableHtml = `
+        <div class="dc-table-wrap"><table class="dc-table">
+          <thead><tr><th>Criteria</th>${names.map(n => `<th>${esc(n)}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${comparison.map(row => `<tr><td>${esc(row.criteria || '')}</td>${names.map(n => `<td>${esc((row.values && row.values[n]) || '—')}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table></div>`;
+    }
+
+    const assumptionsHtml = assumptions.length
+      ? `<ul class="dc-assumptions">${assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>`
+      : `<p class="dc-assumptions" style="padding-left:0;">None noted.</p>`;
+
+    return `
+      <div class="decision-card">
+        <div class="dc-header">
+          <svg class="dc-header-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <span class="dc-header-title">DECISION CARD</span>
+        </div>
+        <div class="dc-section"><div class="dc-section-label">Goal</div><div class="dc-goal">${goal}</div></div>
+        ${options.length ? `<div class="dc-section"><div class="dc-section-label">Options</div><div class="dc-options">${optionsHtml}</div></div>` : ''}
+        ${tableHtml ? `<div class="dc-section"><div class="dc-section-label">Comparison</div>${tableHtml}</div>` : ''}
+        <div class="dc-section"><div class="dc-section-label">Assumptions &amp; Missing Info</div>${assumptionsHtml}</div>
+        ${nextStep ? `<div class="dc-section"><div class="dc-section-label">Sofia's Suggested Next Step</div><div class="dc-next-step">${nextStep}</div></div>` : ''}
+      </div>`;
   },
 };
 
@@ -905,7 +1041,8 @@ const App = {
     UI.showTyping(); UI.setStatus('Thinking...');
 
     try {
-      const reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category);
+      const decision = DecisionMode.isDecisionQuery(text);
+      const reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category, decision);
       UI.removeTyping(); UI.setStatus('Online');
       UI.addMessage('sofia', reply);
       State.history.push({ role: 'assistant', content: reply });
