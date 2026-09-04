@@ -422,7 +422,7 @@ const DecisionMode = {
     const patterns = [
       /\bvs\.?\b/, /\bversus\b/, /which (one )?is better/, /which (should|would) i/,
       /should i (choose|pick|go with|use|buy|select|opt for)/, /compare\b.*\band\b/,
-      /pros and cons/, /better choice/, /which option/, /\bor\b.*\?\s*$/,
+      /pros and cons/, /better choice/, /which option/, /\b[a-z]{2,}\s+or\s+[a-z]{2,}\b.*\?\s*$/,
     ];
     return patterns.some(p => p.test(t));
   },
@@ -749,7 +749,7 @@ const UI = {
 ═══════════════════════════════════════ */
 const DecisionUI = {
   extract(text) {
-    const re = /```decision-card\s*\n([\s\S]*?)```/;
+    const re = /```decision-card\n?([\s\S]*?)```/;
     const m = re.exec(text || '');
     if (!m) return null;
     let data;
@@ -782,7 +782,7 @@ const DecisionUI = {
         <div class="dc-table-wrap"><table class="dc-table">
           <thead><tr><th>Criteria</th>${names.map(n => `<th>${esc(n)}</th>`).join('')}</tr></thead>
           <tbody>
-            ${comparison.map(row => `<tr><td>${esc(row.criteria || '')}</td>${names.map(n => `<td>${esc((row.values && row.values[n]) || '—')}</td>`).join('')}</tr>`).join('')}
+            ${comparison.map(row => `<tr><td>${esc(row.criteria || '')}</td>${names.map(n => { const v = row.values && row.values[n]; return `<td>${esc(v != null && v !== '' ? String(v) : '—')}</td>`; }).join('')}</tr>`).join('')}
           </tbody>
         </table></div>`;
     }
