@@ -543,6 +543,7 @@ const Auth = {
       'auth/popup-blocked': 'Popup blocked. Please allow popups and try again.',
       'auth/network-request-failed': 'Network error. Check your connection.',
       'auth/missing-password': 'Please enter a password.',
+      'auth/operation-not-supported-in-this-environment': "Google Sign-In needs a real web address. Please open https://sofia-ai-20178.firebaseapp.com in your browser instead of opening this file directly.",
     };
     return map[err.code] || err.message || 'Something went wrong. Please try again.';
   },
