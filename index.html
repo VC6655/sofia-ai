@@ -363,6 +363,9 @@ const CONFIG = {
   maxTokens: 1500,
   maxHistory: 20,
   demoDelay: { min: 900, max: 1700 },
+  // DEV/TESTING: set to false to allow unlimited guest messages with no auth wall.
+  // Set back to true for production/beta to re-enable the guest limit below.
+  guestLimitEnabled: false,
   guestMessageLimit: 2,
   firebase: {
     apiKey: "AIzaSyCQk0kf1FpB4LDKYkpaA40VQ_iM5hpEDk8",
@@ -711,7 +714,7 @@ const UI = {
   updateGuestCounter() {
     const el = document.getElementById('guest-counter');
     if (!el) return;
-    if (Auth.isLoggedIn()) { el.classList.add('hidden'); return; }
+    if (!CONFIG.guestLimitEnabled || Auth.isLoggedIn()) { el.classList.add('hidden'); return; }
     const remaining = Math.max(0, CONFIG.guestMessageLimit - State.guestMsgCount);
     if (remaining > 0) {
       el.classList.remove('hidden');
@@ -1043,7 +1046,7 @@ const App = {
 
     // Guest message limit gate — works whether or not Firebase is configured.
     // Auth can be "disabled" (no Firebase keys yet) but the UI flow must still fire.
-    if (!Auth.isLoggedIn() && State.guestMsgCount >= CONFIG.guestMessageLimit) {
+    if (CONFIG.guestLimitEnabled && !Auth.isLoggedIn() && State.guestMsgCount >= CONFIG.guestMessageLimit) {
       this.openAuth('chat');
       return;
     }
@@ -1061,7 +1064,7 @@ const App = {
       State.guestMsgCount++;
       localStorage.setItem('sofia_guest_count', String(State.guestMsgCount));
       UI.updateGuestCounter();
-      justHitLimit = State.guestMsgCount >= CONFIG.guestMessageLimit;
+      justHitLimit = CONFIG.guestLimitEnabled && State.guestMsgCount >= CONFIG.guestMessageLimit;
     }
 
     State.isThinking = true;
