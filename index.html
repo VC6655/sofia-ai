@@ -464,17 +464,31 @@ const Auth = {
       App.onAuthReady();
       return;
     }
+    let resolved = false;
+    const resolveOnce = () => {
+      if (resolved) return;
+      resolved = true;
+      this.ready = true;
+      App.onAuthReady();
+    };
     try {
       firebase.initializeApp(CONFIG.firebase);
       firebase.auth().onAuthStateChanged(user => {
         this.user = user;
-        this.ready = true;
-        App.onAuthReady();
+        // If the fallback below already rendered the app, just refresh the
+        // navbar to reflect a late-arriving real auth state instead of
+        // re-triggering navigation.
+        if (resolved) { UI.updateNavbarForAuth(); return; }
+        resolveOnce();
       });
     } catch (e) {
-      this.ready = true;
-      App.onAuthReady();
+      resolveOnce();
     }
+    // Safety net: Firebase's auth-state callback can be delayed or never fire
+    // (Authentication not yet enabled in the project, network issue, ad
+    // blocker, etc.). Don't leave the whole app stuck on a black screen —
+    // fall back to the logged-out view after a short wait.
+    setTimeout(resolveOnce, 3500);
   },
 
   isLoggedIn() { return !!this.user; },
