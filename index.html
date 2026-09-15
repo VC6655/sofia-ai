@@ -179,6 +179,18 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 .dc-next-step{font-size:13px;color:rgba(255,255,255,.92);background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.22);border-radius:11px;padding:10px 13px;line-height:1.55;}
 @media(max-width:420px){.dc-options{grid-template-columns:1fr;}}
 
+/* ── CALCULATION CARD (reuses .decision-card/.dc-* shell) ── */
+.cc-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;}
+.cc-input{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 11px;}
+.cc-input-label{display:block;font-size:10px;color:rgba(255,255,255,.45);margin-bottom:2px;}
+.cc-input-value{display:block;font-size:13px;font-weight:600;color:#fff;}
+.cc-steps{padding-left:18px;font-size:13px;line-height:1.7;color:rgba(255,255,255,.85);}
+.cc-steps li{margin-bottom:3px;}
+.cc-result{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.28);border-radius:11px;padding:11px 14px;}
+.cc-result-label{font-size:12px;color:rgba(255,255,255,.7);}
+.cc-result-value{font-size:18px;font-weight:700;color:var(--cyan);}
+.cc-disclaimer{margin-top:2px;font-size:11px;color:rgba(255,200,0,.7);line-height:1.5;}
+
 ::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(0,229,255,.18);border-radius:2px;}
@@ -412,6 +424,10 @@ const DEMO = {
     "Good one to think through carefully 🤔\n\n```decision-card\n{\"goal\":\"Decide where to park an emergency fund so it's safe and accessible.\",\"options\":[{\"name\":\"Savings Account\",\"benefits\":[\"Instant access\",\"Zero risk to principal\",\"Easy to set up\"],\"risks\":[\"Returns barely beat inflation\"]},{\"name\":\"Liquid Mutual Fund\",\"benefits\":[\"Higher potential returns\"],\"risks\":[\"Value can dip right when you need cash\",\"Withdrawal can take 1-3 days\",\"Possible exit load if redeemed early\"]}],\"comparison\":[{\"criteria\":\"Liquidity\",\"values\":{\"Savings Account\":\"Instant\",\"Liquid Mutual Fund\":\"1-3 days\"}},{\"criteria\":\"Risk\",\"values\":{\"Savings Account\":\"Very low\",\"Liquid Mutual Fund\":\"Low-medium\"}},{\"criteria\":\"Typical Returns\",\"values\":{\"Savings Account\":\"~3-4%\",\"Liquid Mutual Fund\":\"~6-8%\"}}],\"assumptions\":[\"Assumes the fund may need to be withdrawn on short notice\",\"Actual returns vary by bank and fund\"],\"nextStep\":\"Keep 3-6 months of expenses in a savings account for instant access, and only route extra buffer into a liquid fund once that base is fully covered.\"}\n```",
     "Let's break this down properly 📊\n\n```decision-card\n{\"goal\":\"Choose the better option for this decision given the trade-offs involved.\",\"options\":[{\"name\":\"Option A\",\"benefits\":[\"Faster to get started\",\"Lower upfront cost\"],\"risks\":[\"May not scale well long-term\"]},{\"name\":\"Option B\",\"benefits\":[\"Stronger long-term fit\"],\"risks\":[\"Higher upfront cost\",\"Steeper learning curve\"]}],\"comparison\":[{\"criteria\":\"Upfront Cost\",\"values\":{\"Option A\":\"Low\",\"Option B\":\"Higher\"}},{\"criteria\":\"Long-term Fit\",\"values\":{\"Option A\":\"Moderate\",\"Option B\":\"Strong\"}}],\"assumptions\":[\"This is illustrative — share more specifics for a tailored comparison\"],\"nextStep\":\"Tell me more about your priorities (budget, timeline, must-haves) and I'll tailor this comparison to your actual situation.\"}\n```",
   ],
+  calc: [
+    "Let's work through this step by step 🧮\n\n```calc-card\n{\"question\":\"Monthly EMI for a loan of ₹5,00,000 at 9% annual interest for 3 years\",\"inputs\":[{\"label\":\"Principal (P)\",\"value\":\"₹5,00,000\"},{\"label\":\"Annual Interest Rate\",\"value\":\"9%\"},{\"label\":\"Tenure\",\"value\":\"3 years (36 months)\"}],\"method\":\"EMI formula: EMI = P × r × (1+r)^n / ((1+r)^n − 1), where r is the monthly interest rate\",\"steps\":[\"Monthly rate r = 9% / 12 = 0.75% = 0.0075\",\"Number of months n = 3 × 12 = 36\",\"(1+r)^n = (1.0075)^36 ≈ 1.3097\",\"EMI = 500000 × 0.0075 × 1.3097 / (1.3097 − 1) ≈ ₹15,860\"],\"result\":{\"label\":\"Monthly EMI\",\"value\":\"≈ ₹15,860\"},\"assumptions\":[\"Assumes a fixed interest rate for the full tenure\",\"Actual EMI may vary slightly by lender's rounding/day-count method\"]}\n```",
+    "Here's the calculation 📊\n\n```calc-card\n{\"question\":\"Percentage change in revenue from ₹80,000 last month to ₹95,000 this month\",\"inputs\":[{\"label\":\"Old Value\",\"value\":\"₹80,000\"},{\"label\":\"New Value\",\"value\":\"₹95,000\"}],\"method\":\"Percentage change = (New − Old) / Old × 100\",\"steps\":[\"Difference = 95,000 − 80,000 = 15,000\",\"Percentage change = 15,000 / 80,000 × 100\",\"= 18.75%\"],\"result\":{\"label\":\"Percentage Change\",\"value\":\"+18.75%\"},\"assumptions\":[\"Assumes both figures are for the same category/currency and time basis\"]}\n```",
+  ],
 };
 
 /* ═══════════════════════════════════════
@@ -432,6 +448,34 @@ const DecisionMode = {
 
   buildInstruction(text) {
     return text + "\n\n[SYSTEM: This is a decision/comparison question. Respond with ONLY one fenced code block labeled \"decision-card\" containing valid JSON in exactly this shape, nothing outside the block:\n{\"goal\":\"short restatement of what the user is deciding\",\"options\":[{\"name\":\"Option name\",\"benefits\":[\"...\"],\"risks\":[\"...\"]}],\"comparison\":[{\"criteria\":\"criterion name\",\"values\":{\"Option name\":\"short value\"}}],\"assumptions\":[\"...\"],\"nextStep\":\"one concrete recommended next step\"}\nBe concise and honest about missing info. Option names inside comparison.values must exactly match options[].name.]";
+  },
+};
+
+/* ═══════════════════════════════════════
+   CALC MODE — sibling to DecisionMode. Detects
+   calculation/computation questions (EMI, SIP,
+   percentage change, profit/loss, margin,
+   break-even, etc.) and asks Sofia for a
+   structured calc-card fenced block (parsed +
+   rendered by CalcUI)
+═══════════════════════════════════════ */
+const CalcMode = {
+  isCalculationQuery(text) {
+    const t = (text || '').toLowerCase();
+    const patterns = [
+      /\bcalculate\b/, /\bcompute\b/, /\bemi\b/, /\bsip\b/,
+      /\bcompound interest\b/, /\bsimple interest\b/,
+      /\bpercentage (change|increase|decrease)\b/, /%\s*(of|increase|decrease|change)\b/,
+      /\bprofit\s*(\/|or)?\s*loss\b/, /\bprofit margin\b/, /\bmargin\b/, /\bbreak[\s-]?even\b/,
+      /\breturn on investment\b/, /\broi\b/, /\bmonthly (payment|installment)\b/,
+      /\bhow much (is|will|would|does|do)\b.*\d/, // broad phrase - require a number to reduce false positives
+      /\bwhat (is|will|would) (the|my)\b.*\b(emi|interest|return|profit|margin|cost|payment|total|value)\b/,
+    ];
+    return patterns.some(p => p.test(t));
+  },
+
+  buildInstruction(text) {
+    return text + "\n\n[SYSTEM: This is a calculation/computation question. Respond with ONLY one fenced code block labeled \"calc-card\" containing valid JSON in exactly this shape, nothing outside the block:\n{\"question\":\"short restatement of what is being calculated\",\"inputs\":[{\"label\":\"input name\",\"value\":\"input value with units\"}],\"method\":\"short name of the formula/approach used\",\"steps\":[\"step 1 with real numbers\",\"step 2 ...\"],\"result\":{\"label\":\"result name\",\"value\":\"final computed value with units\"},\"assumptions\":[\"...\"]}\nShow real arithmetic in steps, not just the final answer. Be honest about assumptions or missing info, and do not claim the result is guaranteed exact.]";
   },
 };
 
@@ -609,26 +653,30 @@ const AuthUI = {
    API CLIENT — abstracted for Phase 2 switch
 ═══════════════════════════════════════ */
 const SofiaAPI = {
-  async chat(messages, category, decision) {
-    if (State.isDemo || CONFIG.mode === 'byok-fallback-demo') return this._demoResponse(category, decision);
-    if (CONFIG.mode === 'managed') return this._callBackend(messages, category, decision);
-    if (State.apiKey) return this._callDirect(messages, category, decision);
+  // responseType: null (plain chat) | 'decision' | 'calc' — the two structured
+  // response types. Kept as a plain string rather than separate booleans so a
+  // future third type doesn't require another parameter.
+  async chat(messages, category, responseType) {
+    if (State.isDemo || CONFIG.mode === 'byok-fallback-demo') return this._demoResponse(category, responseType);
+    if (CONFIG.mode === 'managed') return this._callBackend(messages, category, responseType);
+    if (State.apiKey) return this._callDirect(messages, category, responseType);
     // No backend yet and no dev key — use demo content silently for real users (no bill, no banner)
-    return this._demoResponse(category, decision);
+    return this._demoResponse(category, responseType);
   },
 
   // Only the outgoing API copy of the last user turn is annotated with the
-  // decision-card instruction — the message as stored/displayed in chat stays untouched.
-  _prepareMessages(messages, decision) {
-    if (!decision || !messages.length) return messages;
+  // structured-response instruction — the message as stored/displayed in chat stays untouched.
+  _prepareMessages(messages, responseType) {
+    if (!responseType || !messages.length) return messages;
     const last = messages[messages.length - 1];
     if (last.role !== 'user') return messages;
+    const builder = responseType === 'calc' ? CalcMode.buildInstruction : DecisionMode.buildInstruction;
     const copy = messages.slice();
-    copy[copy.length - 1] = { ...last, content: DecisionMode.buildInstruction(last.content) };
+    copy[copy.length - 1] = { ...last, content: builder(last.content) };
     return copy;
   },
 
-  async _callDirect(messages, category, decision) {
+  async _callDirect(messages, category, responseType) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -639,7 +687,7 @@ const SofiaAPI = {
       },
       body: JSON.stringify({
         model: CONFIG.model, max_tokens: CONFIG.maxTokens,
-        system: PROMPTS[category], messages: this._prepareMessages(messages.slice(-CONFIG.maxHistory), decision),
+        system: PROMPTS[category], messages: this._prepareMessages(messages.slice(-CONFIG.maxHistory), responseType),
       }),
     });
     if (!res.ok) {
@@ -650,20 +698,22 @@ const SofiaAPI = {
     return data.content[0].text;
   },
 
-  async _callBackend(messages, category, decision) {
+  async _callBackend(messages, category, responseType) {
     const res = await fetch(`${CONFIG.backendUrl}/chat`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: this._prepareMessages(messages, decision), category, decision: !!decision }), credentials: 'include',
+      body: JSON.stringify({ messages: this._prepareMessages(messages, responseType), category, responseType: responseType || null }), credentials: 'include',
     });
     if (!res.ok) throw new Error(`Backend error ${res.status}`);
     const data = await res.json();
     return data.reply;
   },
 
-  async _demoResponse(category, decision) {
+  async _demoResponse(category, responseType) {
     const delay = CONFIG.demoDelay.min + Math.random() * (CONFIG.demoDelay.max - CONFIG.demoDelay.min);
     await new Promise(r => setTimeout(r, delay));
-    const pool = decision ? DEMO.decision : (DEMO[category] || DEMO.general);
+    const pool = responseType === 'calc' ? DEMO.calc
+               : responseType === 'decision' ? DEMO.decision
+               : (DEMO[category] || DEMO.general);
     return pool[Math.floor(Math.random() * pool.length)];
   },
 };
@@ -730,10 +780,15 @@ const UI = {
     div.className = `msg ${role}`;
     if (role === 'sofia') {
       const decision = DecisionUI.extract(text);
+      const calc = !decision ? CalcUI.extract(text) : null;
       if (decision) {
         const beforeHtml = decision.before ? this._formatText(decision.before) : '';
         const afterHtml = decision.after ? this._formatText(decision.after) : '';
         div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${beforeHtml}${DecisionUI.render(decision.data)}${afterHtml}</div>`;
+      } else if (calc) {
+        const beforeHtml = calc.before ? this._formatText(calc.before) : '';
+        const afterHtml = calc.after ? this._formatText(calc.after) : '';
+        div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${beforeHtml}${CalcUI.render(calc.data)}${afterHtml}</div>`;
       } else {
         div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${this._formatText(text)}</div>`;
       }
@@ -827,6 +882,62 @@ const DecisionUI = {
         ${tableHtml ? `<div class="dc-section"><div class="dc-section-label">Comparison</div>${tableHtml}</div>` : ''}
         <div class="dc-section"><div class="dc-section-label">Assumptions &amp; Missing Info</div>${assumptionsHtml}</div>
         ${nextStep ? `<div class="dc-section"><div class="dc-section-label">Sofia's Suggested Next Step</div><div class="dc-next-step">${nextStep}</div></div>` : ''}
+      </div>`;
+  },
+};
+
+/* ═══════════════════════════════════════
+   CALCULATION CARD RENDERER — parses a
+   ```calc-card fenced JSON block out of a
+   Sofia reply and renders it as a themed card,
+   reusing DecisionUI's visual system
+═══════════════════════════════════════ */
+const CalcUI = {
+  extract(text) {
+    const re = /```calc-card\n?([\s\S]*?)```/;
+    const m = re.exec(text || '');
+    if (!m) return null;
+    let data;
+    try { data = JSON.parse(m[1].trim()); } catch (e) { return null; }
+    if (!data || typeof data !== 'object' || !data.result || typeof data.result !== 'object' || !Array.isArray(data.steps)) return null;
+    return { data, before: text.slice(0, m.index).trim(), after: text.slice(m.index + m[0].length).trim() };
+  },
+
+  render(data) {
+    const esc = UI._escapeHtml;
+    const question = esc(data.question || '');
+    const method = esc(data.method || '');
+    const inputs = Array.isArray(data.inputs) ? data.inputs : [];
+    const steps = Array.isArray(data.steps) ? data.steps : [];
+    const assumptions = Array.isArray(data.assumptions) ? data.assumptions : [];
+    const resultLabel = esc((data.result && data.result.label) || 'Result');
+    const resultValue = esc(data.result && data.result.value != null && data.result.value !== '' ? String(data.result.value) : '—');
+
+    const inputsHtml = inputs.length
+      ? `<div class="cc-inputs">${inputs.map(i => `<div class="cc-input"><span class="cc-input-label">${esc(i && i.label || '')}</span><span class="cc-input-value">${esc(i && i.value != null ? String(i.value) : '')}</span></div>`).join('')}</div>`
+      : '';
+
+    const stepsHtml = steps.length
+      ? `<ol class="cc-steps">${steps.map(s => `<li>${esc(String(s))}</li>`).join('')}</ol>`
+      : '';
+
+    const assumptionsHtml = assumptions.length
+      ? `<ul class="dc-assumptions">${assumptions.map(a => `<li>${esc(String(a))}</li>`).join('')}</ul>`
+      : `<p class="dc-assumptions" style="padding-left:0;">None noted.</p>`;
+
+    return `
+      <div class="decision-card">
+        <div class="dc-header">
+          <svg class="dc-header-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+          <span class="dc-header-title">CALCULATION</span>
+        </div>
+        ${question ? `<div class="dc-section"><div class="dc-section-label">Question</div><div class="dc-goal">${question}</div></div>` : ''}
+        ${inputsHtml ? `<div class="dc-section"><div class="dc-section-label">Inputs</div>${inputsHtml}</div>` : ''}
+        ${method ? `<div class="dc-section"><div class="dc-section-label">Method</div><div class="dc-goal">${method}</div></div>` : ''}
+        ${stepsHtml ? `<div class="dc-section"><div class="dc-section-label">Step-by-Step</div>${stepsHtml}</div>` : ''}
+        <div class="dc-section"><div class="dc-section-label">Result</div><div class="cc-result"><span class="cc-result-label">${resultLabel}</span><span class="cc-result-value">${resultValue}</span></div></div>
+        <div class="dc-section"><div class="dc-section-label">Assumptions</div>${assumptionsHtml}</div>
+        <div class="cc-disclaimer">⚠️ Calculated by AI — please double-check important figures independently.</div>
       </div>`;
   },
 };
@@ -1071,8 +1182,12 @@ const App = {
     UI.showTyping(); UI.setStatus('Thinking...');
 
     try {
-      const decision = DecisionMode.isDecisionQuery(text);
-      const reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category, decision);
+      // Decision Mode keeps priority (unchanged behavior) - calculation intent
+      // is only checked when the question isn't already a decision/comparison one.
+      const responseType = DecisionMode.isDecisionQuery(text) ? 'decision'
+                          : CalcMode.isCalculationQuery(text) ? 'calc'
+                          : null;
+      const reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category, responseType);
       UI.removeTyping(); UI.setStatus('Online');
       UI.addMessage('sofia', reply);
       State.history.push({ role: 'assistant', content: reply });
