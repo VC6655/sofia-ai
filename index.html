@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#00000a">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Sofia AI</title>
+<title>Sofia — AI Decision Assistant</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -91,11 +91,15 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .home-body{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:860px;padding:0 18px calc(24px + var(--safe-b));}
 .hero-title{font-family:'Orbitron',monospace;font-size:clamp(48px,13vw,82px);font-weight:900;letter-spacing:.18em;color:var(--cyan);text-shadow:0 0 38px rgba(0,229,255,.5),0 0 80px rgba(0,229,255,.2);text-align:center;line-height:1;}
 .hero-tagline{font-size:13px;font-weight:300;letter-spacing:.22em;color:var(--text-dim);margin-top:9px;text-align:center;}
-.orb-container{width:100%;max-width:340px;margin:-8px 0 -10px;display:flex;justify-content:center;}
+.quick-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+.qa-chip{display:flex;align-items:center;gap:6px;background:rgba(0,229,255,.05);border:1px solid var(--cyan-border);border-radius:20px;padding:8px 15px;font-size:12px;font-weight:500;letter-spacing:.02em;color:rgba(0,229,255,.85);cursor:pointer;font-family:inherit;outline:none;transition:background .18s,border-color .18s,transform .15s;}
+.qa-chip:hover,.qa-chip:active{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.4);transform:translateY(-1px);}
+.qa-chip svg{flex-shrink:0;}
+.orb-container{width:100%;max-width:340px;margin:6px 0 -10px;display:flex;justify-content:center;}
 #orb-canvas{width:100%;height:auto;display:block;}
-.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;margin-top:6px;}
 @media(max-width:480px){.cat-grid{grid-template-columns:repeat(2,1fr);}}
-.cat-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--surface);border:1px solid rgba(0,229,255,.15);border-radius:var(--radius);padding:16px 10px;cursor:pointer;color:inherit;transition:background .22s,border-color .22s,transform .18s,box-shadow .22s;}
+.cat-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--surface);border:1px solid rgba(0,229,255,.15);border-radius:var(--radius);padding:18px 12px;cursor:pointer;color:inherit;transition:background .22s,border-color .22s,transform .18s,box-shadow .22s;}
 .cat-card:hover,.cat-card:active{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.45);box-shadow:0 0 18px rgba(0,229,255,.12);transform:translateY(-2px);}
 .cat-icon{color:var(--cyan);flex-shrink:0;}
 .cat-label{font-size:12px;font-weight:500;text-align:center;line-height:1.4;}
@@ -297,7 +301,21 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 
   <div class="home-body">
     <h1 class="hero-title">SOFIA</h1>
-    <p class="hero-tagline">Your AI for Everything</p>
+    <p class="hero-tagline">Your AI Decision Assistant</p>
+    <div class="quick-actions">
+      <button type="button" class="qa-chip" onclick="App.quickAction('analyze')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        Analyze
+      </button>
+      <button type="button" class="qa-chip" onclick="App.quickAction('compare')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Compare
+      </button>
+      <button type="button" class="qa-chip" onclick="App.quickAction('calculate')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+        Calculate
+      </button>
+    </div>
     <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
 
     <div class="cat-grid">
@@ -1127,6 +1145,26 @@ const App = {
   goHome() {
     UI.show('home-screen');
     Orb.init();
+  },
+
+  // ── Home quick-action chips (Analyze / Compare / Calculate) ──
+  // These route into real existing capabilities (Finance category,
+  // Decision Mode, Calculation Cards) — no new backend behavior.
+  quickAction(type) {
+    if (type === 'analyze') { this.startChat('finance'); return; }
+    const examples = {
+      compare: 'Should I choose a savings account or a mutual fund for my emergency fund?',
+      calculate: 'Calculate my EMI for a ₹5,00,000 loan at 9% interest for 3 years.',
+    };
+    const text = examples[type];
+    if (!text) return;
+    this.startChat('finance');
+    setTimeout(() => {
+      const input = document.getElementById('chat-input');
+      input.value = text;
+      UI.autoResize(input);
+      this.sendMessage();
+    }, 120);
   },
 
   // ── Chat ──
