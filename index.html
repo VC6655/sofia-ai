@@ -634,6 +634,12 @@ const Auth = {
       'auth/missing-password': 'Please enter a password.',
       'auth/operation-not-supported-in-this-environment': "Google Sign-In needs a real web address. Please open https://sofia-ai-20178.firebaseapp.com in your browser instead of opening this file directly.",
     };
+    // A real Firebase Auth error always has a `.code`. Anything without one
+    // (e.g. the Firebase SDK script itself failed to load, blocked by a
+    // network issue or an ad blocker) is not a Firebase error at all, so its
+    // raw technical message (like "firebase is not defined") must not leak
+    // to the user as-is.
+    if (!err || !err.code) return 'Sign-in is temporarily unavailable. Please check your connection (or disable any ad blocker) and try again.';
     return map[err.code] || err.message || 'Something went wrong. Please try again.';
   },
 };
