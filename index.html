@@ -5,20 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#00000a">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Sofia AI</title>
+<title>Sofia — AI Decision Assistant</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{--cyan:#00e5ff;--cyan-border:rgba(0,229,255,.2);--bg:#00000a;--surface:rgba(255,255,255,.04);--text-dim:rgba(255,255,255,.45);--radius:14px;--safe-b:env(safe-area-inset-bottom,0px);}
+:root{--cyan:#00e5ff;--cyan-border:rgba(0,229,255,.2);--bg:#00000a;--surface:rgba(255,255,255,.04);--text-dim:rgba(255,255,255,.45);--radius:14px;--radius-lg:18px;--safe-b:env(safe-area-inset-bottom,0px);--ease:cubic-bezier(.16,1,.3,1);--nav-glass:rgba(3,6,14,.72);--card-glow:0 10px 40px rgba(0,0,0,.35);}
 html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk',-apple-system,sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}
 .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,229,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.022) 1px,transparent 1px);background-size:60px 60px;}
 .screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
 .screen.hidden{display:none!important;}
+.hidden{display:none!important;}
 
 /* ── Shared card style (dev / auth / profile) ── */
-.center-card{background:rgba(0,229,255,.04);border:1px solid var(--cyan-border);border-radius:20px;padding:32px 26px;max-width:400px;width:100%;text-align:center;}
+.center-card{background:rgba(0,229,255,.045);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--cyan-border);border-radius:22px;padding:34px 26px;max-width:400px;width:100%;text-align:center;box-shadow:var(--card-glow),inset 0 1px 0 rgba(255,255,255,.04);}
 .card-title{font-family:'Orbitron',monospace;font-size:34px;font-weight:900;letter-spacing:.18em;color:var(--cyan);text-shadow:0 0 28px rgba(0,229,255,.5);margin-bottom:4px;}
 .card-sub{font-size:12px;letter-spacing:.15em;font-weight:300;color:var(--text-dim);margin-bottom:26px;}
 
@@ -42,21 +44,23 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 /* ── AUTH screen ── */
 #auth-screen{justify-content:center;padding:32px 20px calc(32px + var(--safe-b));}
 .auth-tabs{display:flex;gap:6px;background:rgba(255,255,255,.04);border-radius:12px;padding:4px;margin-bottom:22px;}
-.auth-tab{flex:1;padding:9px;border-radius:9px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.4);transition:.2s;}
+.auth-tab{flex:1;padding:9px;border-radius:9px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.4);transition:background .22s var(--ease),color .22s var(--ease);}
 .auth-tab.active{background:rgba(0,229,255,.14);color:var(--cyan);}
 .auth-field{margin-bottom:13px;text-align:left;}
 .auth-field label{font-size:10px;letter-spacing:.08em;color:rgba(0,229,255,.6);display:block;margin-bottom:6px;}
-.auth-field input{width:100%;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.2);border-radius:11px;padding:12px 14px;color:#fff;font-size:14px;font-family:inherit;outline:none;transition:.2s;}
+.auth-field input{width:100%;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.2);border-radius:11px;padding:12px 14px;color:#fff;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s;}
 .auth-field input:focus{border-color:rgba(0,229,255,.45);box-shadow:0 0 16px rgba(0,229,255,.08);}
 .auth-field input::placeholder{color:rgba(255,255,255,.2);}
 .field-name{display:none;}
 .field-name.show{display:block;}
-.btn-auth-primary{width:100%;padding:13px;background:rgba(0,229,255,.16);border:1px solid rgba(0,229,255,.42);border-radius:12px;color:var(--cyan);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:5px;transition:.2s;}
+.btn-auth-primary{width:100%;padding:13px;background:rgba(0,229,255,.16);border:1px solid rgba(0,229,255,.42);border-radius:12px;color:var(--cyan);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:5px;transition:background .2s,transform .12s var(--ease);}
 .btn-auth-primary:hover{background:rgba(0,229,255,.25);}
+.btn-auth-primary:active{transform:scale(.98);}
 .btn-auth-primary:disabled{opacity:.5;cursor:not-allowed;}
 .auth-divider{display:flex;align-items:center;gap:10px;margin:18px 0;}
-.btn-google{width:100%;padding:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;}
+.btn-google{width:100%;padding:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,transform .12s var(--ease);}
 .btn-google:hover{background:rgba(255,255,255,.1);}
+.btn-google:active{transform:scale(.98);}
 .auth-error{font-size:12px;color:#ff6b6b;margin-top:10px;min-height:14px;}
 .auth-skip{font-size:12px;color:rgba(255,255,255,.3);margin-top:18px;cursor:pointer;text-decoration:underline;}
 .auth-limit-note{font-size:12px;color:rgba(0,229,255,.6);margin-bottom:18px;line-height:1.6;}
@@ -64,7 +68,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 
 /* ── PROFILE screen ── */
 #profile-screen{justify-content:flex-start;padding-top:0;}
-.profile-navbar{width:100%;max-width:860px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.profile-navbar{position:sticky;top:0;z-index:2;width:100%;max-width:860px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--nav-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.05);}
 .profile-body{flex:1;width:100%;max-width:420px;padding:20px 20px calc(30px + var(--safe-b));display:flex;flex-direction:column;align-items:center;}
 .profile-avatar-lg{width:84px;height:84px;border-radius:50%;margin-bottom:16px;background:linear-gradient(135deg,rgba(0,229,255,.3),rgba(80,40,200,.35));border:2px solid rgba(0,229,255,.35);box-shadow:0 0 24px rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:var(--cyan);object-fit:cover;}
 .profile-name{font-size:19px;font-weight:600;margin-bottom:3px;}
@@ -74,66 +78,88 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .profile-row + .profile-row{border-top:1px solid rgba(255,255,255,.06);}
 .profile-row-label{color:rgba(255,255,255,.4);}
 .profile-row-value{color:#fff;font-weight:500;}
-.btn-logout{width:100%;padding:13px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.25);border-radius:var(--radius);color:rgba(255,110,110,.9);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;transition:.2s;}
+.btn-logout{width:100%;padding:13px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.25);border-radius:var(--radius);color:rgba(255,110,110,.9);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;transition:background .2s,transform .12s var(--ease);}
 .btn-logout:hover{background:rgba(255,80,80,.15);}
+.btn-logout:active{transform:scale(.98);}
 
 /* ── NAVBAR (home) ── */
-.navbar{width:100%;max-width:860px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.navbar{position:sticky;top:0;z-index:2;width:100%;max-width:860px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:var(--nav-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.05);}
 .badge{display:flex;align-items:center;gap:6px;background:rgba(0,229,255,.05);border:1px solid var(--cyan-border);border-radius:20px;padding:6px 13px;font-size:11px;letter-spacing:.07em;color:rgba(0,229,255,.8);}
 .dot-live{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 7px var(--cyan);animation:blink 2.2s ease-in-out infinite;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 .nav-right{display:flex;align-items:center;gap:10px;}
-.nav-signin{font-size:12px;color:rgba(0,229,255,.7);cursor:pointer;letter-spacing:.04em;padding:6px 12px;border:1px solid rgba(0,229,255,.25);border-radius:18px;}
-.nav-avatar{width:32px;height:32px;border-radius:50%;cursor:pointer;border:1px solid rgba(0,229,255,.35);background:linear-gradient(135deg,rgba(0,229,255,.3),rgba(80,40,200,.35));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--cyan);object-fit:cover;}
+.nav-signin{font-size:12px;color:rgba(0,229,255,.7);cursor:pointer;letter-spacing:.04em;padding:6px 12px;background:transparent;border:1px solid rgba(0,229,255,.25);border-radius:18px;font-family:inherit;transition:background .18s var(--ease),border-color .18s var(--ease),transform .12s var(--ease);}
+.nav-signin:hover{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.4);}
+.nav-signin:active{transform:scale(.96);}
+.nav-avatar{width:32px;height:32px;border-radius:50%;cursor:pointer;padding:0;border:1px solid rgba(0,229,255,.35);background:linear-gradient(135deg,rgba(0,229,255,.3),rgba(80,40,200,.35));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--cyan);object-fit:cover;font-family:inherit;transition:transform .12s var(--ease);}
+.nav-avatar:active{transform:scale(.94);}
 
 /* ── HOME body ── */
 #home-screen{overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .home-body{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:860px;padding:0 18px calc(24px + var(--safe-b));}
-.hero-title{font-family:'Orbitron',monospace;font-size:clamp(48px,13vw,82px);font-weight:900;letter-spacing:.18em;color:var(--cyan);text-shadow:0 0 38px rgba(0,229,255,.5),0 0 80px rgba(0,229,255,.2);text-align:center;line-height:1;}
-.hero-tagline{font-size:13px;font-weight:300;letter-spacing:.22em;color:var(--text-dim);margin-top:9px;text-align:center;}
-.orb-container{width:100%;max-width:340px;margin:-8px 0 -10px;display:flex;justify-content:center;}
-#orb-canvas{width:100%;height:auto;display:block;}
-.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;}
+.hero-title{font-family:'Orbitron',monospace;font-size:clamp(44px,11vw,72px);font-weight:900;letter-spacing:.16em;color:var(--cyan);text-shadow:0 0 22px rgba(0,229,255,.32);text-align:center;line-height:1;margin-top:8px;}
+.hero-tagline{font-size:13px;font-weight:500;letter-spacing:.17em;color:rgba(255,255,255,.55);margin-top:12px;text-align:center;text-transform:uppercase;}
+.hero-subhead{font-size:14.5px;font-weight:300;color:rgba(255,255,255,.48);margin-top:12px;text-align:center;max-width:480px;line-height:1.65;}
+.home-input-wrap{display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:26px;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:0 12px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
+.home-input-wrap:focus-within{border-color:rgba(0,229,255,.45);box-shadow:0 0 28px rgba(0,229,255,.12),inset 0 1px 0 rgba(255,255,255,.04);}
+.home-textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit;resize:none;line-height:1.5;max-height:110px;overflow-y:auto;}
+.home-textarea::placeholder{color:rgba(255,255,255,.28);}
+.hint-text{margin-top:9px;font-size:11px;letter-spacing:.05em;color:rgba(255,255,255,.18);text-align:center;}
+kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-radius:3px;padding:1px 5px;font-size:10px;color:rgba(0,229,255,.55);font-family:monospace;}
+.section-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.32);text-align:center;margin:30px 0 14px;width:100%;font-weight:500;}
+.action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;}
+@media(max-width:640px){.action-grid{grid-template-columns:repeat(2,1fr);}}
+.action-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:rgba(0,229,255,.035);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(0,229,255,.16);border-radius:var(--radius-lg);padding:17px 16px;cursor:pointer;text-align:left;color:inherit;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);transition:background .22s var(--ease),border-color .22s var(--ease),transform .18s var(--ease),box-shadow .22s var(--ease);}
+.action-card:hover{background:rgba(0,229,255,.075);border-color:rgba(0,229,255,.42);box-shadow:0 8px 24px rgba(0,229,255,.1),inset 0 1px 0 rgba(255,255,255,.04);transform:translateY(-3px);}
+.action-card:active{transform:translateY(-1px) scale(.99);background:rgba(0,229,255,.1);}
+.action-icon-badge{width:32px;height:32px;border-radius:9px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0;transition:background .2s var(--ease),transform .2s var(--ease);}
+.action-card:hover .action-icon-badge{background:rgba(0,229,255,.16);transform:scale(1.06);}
+.action-title{font-size:14.5px;font-weight:600;color:#fff;letter-spacing:.01em;}
+.action-desc{font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.45);}
+.orb-container{width:100%;max-width:420px;margin:34px 0 6px;display:flex;justify-content:center;align-items:center;}
+#orb-canvas{width:100%;height:auto;display:block;max-width:100%;}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;}
 @media(max-width:480px){.cat-grid{grid-template-columns:repeat(2,1fr);}}
-.cat-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--surface);border:1px solid rgba(0,229,255,.15);border-radius:var(--radius);padding:16px 10px;cursor:pointer;color:inherit;transition:background .22s,border-color .22s,transform .18s,box-shadow .22s;}
-.cat-card:hover,.cat-card:active{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.45);box-shadow:0 0 18px rgba(0,229,255,.12);transform:translateY(-2px);}
+.cat-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--surface);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(0,229,255,.14);border-radius:var(--radius-lg);padding:18px 12px;cursor:pointer;color:inherit;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);transition:background .22s var(--ease),border-color .22s var(--ease),transform .18s var(--ease),box-shadow .22s var(--ease);}
+.cat-card:hover{background:rgba(0,229,255,.075);border-color:rgba(0,229,255,.42);box-shadow:0 8px 20px rgba(0,229,255,.1),inset 0 1px 0 rgba(255,255,255,.04);transform:translateY(-3px);}
+.cat-card:active{transform:translateY(-1px) scale(.99);background:rgba(0,229,255,.1);}
 .cat-icon{color:var(--cyan);flex-shrink:0;}
 .cat-label{font-size:12px;font-weight:500;text-align:center;line-height:1.4;}
 .cat-arrow{color:var(--cyan);font-size:13px;}
-.home-input-wrap{display:flex;align-items:center;gap:9px;width:100%;margin-top:20px;background:rgba(0,229,255,.03);border:1px solid rgba(0,229,255,.18);border-radius:16px;padding:12px 14px;transition:border-color .2s,box-shadow .2s;}
-.home-input-wrap:focus-within{border-color:rgba(0,229,255,.4);box-shadow:0 0 26px rgba(0,229,255,.08);}
-.home-textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit;resize:none;line-height:1.5;max-height:110px;overflow-y:auto;}
-.home-textarea::placeholder{color:rgba(255,255,255,.25);}
-.hint-text{margin-top:8px;font-size:11px;letter-spacing:.05em;color:rgba(255,255,255,.15);text-align:center;}
-kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-radius:3px;padding:1px 5px;font-size:10px;color:rgba(0,229,255,.55);font-family:monospace;}
-.credit{margin-top:14px;padding-bottom:8px;font-size:11px;letter-spacing:.05em;color:rgba(255,255,255,.1);}
+.credit{margin-top:16px;padding-bottom:8px;font-size:11px;letter-spacing:.05em;color:rgba(255,255,255,.1);}
 
 /* ── icon buttons ── */
-.icon-btn{flex-shrink:0;min-width:38px;min-height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);color:var(--cyan);cursor:pointer;transition:background .18s,box-shadow .18s;}
-.icon-btn:hover,.icon-btn:active{background:rgba(0,229,255,.15);}
+.icon-btn{flex-shrink:0;min-width:38px;min-height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);color:var(--cyan);cursor:pointer;transition:background .18s var(--ease),box-shadow .18s var(--ease),transform .12s var(--ease);}
+.icon-btn:hover{background:rgba(0,229,255,.15);}
+.icon-btn:active{background:rgba(0,229,255,.18);transform:scale(.92);}
+.icon-btn:focus-visible,.btn-send:focus-visible,.btn-back:focus-visible,.btn-clear:focus-visible,
+.action-card:focus-visible,.cat-card:focus-visible,.nav-signin:focus-visible,.nav-avatar:focus-visible{outline:2px solid rgba(0,229,255,.6);outline-offset:2px;}
 .icon-btn.mic-active{background:rgba(0,229,255,.2);box-shadow:0 0 14px rgba(0,229,255,.32);animation:mic-pulse 1.1s ease-in-out infinite;}
 @keyframes mic-pulse{0%,100%{box-shadow:0 0 14px rgba(0,229,255,.32);}50%{box-shadow:0 0 24px rgba(0,229,255,.58);}}
-.btn-back{min-width:36px;min-height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.18);cursor:pointer;color:var(--cyan);flex-shrink:0;}
+.btn-back{min-width:36px;min-height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.18);cursor:pointer;color:var(--cyan);flex-shrink:0;transition:background .18s var(--ease),transform .12s var(--ease);}
+.btn-back:hover{background:rgba(0,229,255,.12);}
+.btn-back:active{transform:scale(.92);}
 
 /* ── CHAT screen ── */
 #chat-screen{overflow:hidden;}
-.chat-navbar{width:100%;max-width:860px;padding:12px 18px;display:flex;align-items:center;gap:11px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.05);}
+.chat-navbar{width:100%;max-width:860px;padding:13px 18px;display:flex;align-items:center;gap:11px;flex-shrink:0;background:var(--nav-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.05);}
 .chat-info{display:flex;align-items:center;gap:9px;flex:1;}
 .orb-mini{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 38% 35%,rgba(0,229,255,.4),rgba(0,50,100,.5));border:1px solid rgba(0,229,255,.45);box-shadow:0 0 10px rgba(0,229,255,.28);animation:orb-pulse 3s ease-in-out infinite;}
 @keyframes orb-pulse{0%,100%{box-shadow:0 0 10px rgba(0,229,255,.28);}50%{box-shadow:0 0 20px rgba(0,229,255,.52);}}
 .chat-name{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;letter-spacing:.13em;color:var(--cyan);}
 .chat-status{font-size:11px;color:rgba(0,229,255,.55);letter-spacing:.04em;}
-.btn-clear{min-width:34px;min-height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);cursor:pointer;color:rgba(255,255,255,.45);transition:.18s;}
+.btn-clear{min-width:34px;min-height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);cursor:pointer;color:rgba(255,255,255,.45);transition:background .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease),transform .12s var(--ease);}
 .btn-clear:hover{background:rgba(255,80,80,.09);border-color:rgba(255,80,80,.28);color:rgba(255,100,100,.7);}
-.messages{flex:1;width:100%;max-width:860px;overflow-y:auto;overflow-x:hidden;padding:14px 18px 12px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;}
+.btn-clear:active{transform:scale(.9);}
+.messages{flex:1;width:100%;max-width:860px;overflow-y:auto;overflow-x:hidden;padding:16px 18px 12px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;}
 .msg{display:flex;gap:9px;align-items:flex-start;max-width:88%;}
 .msg.sofia{align-self:flex-start;animation:msg-in .22s ease;}
 .msg.user{align-self:flex-end;flex-direction:row-reverse;animation:msg-in .22s ease;}
 @keyframes msg-in{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}
 .msg-avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;margin-top:2px;background:radial-gradient(circle at 38% 35%,rgba(0,229,255,.38),rgba(0,50,100,.5));border:1px solid rgba(0,229,255,.38);box-shadow:0 0 9px rgba(0,229,255,.22);}
-.msg-bubble{padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.65;max-width:100%;word-break:break-word;}
-.msg.sofia .msg-bubble{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);border-radius:3px 16px 16px 16px;color:rgba(255,255,255,.88);}
-.msg.user .msg-bubble{background:rgba(90,70,240,.32);border:1px solid rgba(110,90,255,.28);border-radius:16px 3px 16px 16px;color:#fff;}
+.msg-bubble{padding:11px 15px;border-radius:var(--radius-lg);font-size:14px;line-height:1.65;max-width:100%;word-break:break-word;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.msg.sofia .msg-bubble{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:3px var(--radius-lg) var(--radius-lg) var(--radius-lg);color:rgba(255,255,255,.9);}
+.msg.user .msg-bubble{background:rgba(90,70,240,.34);border:1px solid rgba(110,90,255,.3);border-radius:var(--radius-lg) 3px var(--radius-lg) var(--radius-lg);color:#fff;}
 .msg-bubble code{background:rgba(0,229,255,.1);padding:1px 5px;border-radius:4px;font-family:'Courier New',monospace;font-size:13px;}
 .msg-bubble pre{background:rgba(0,0,0,.45);border:1px solid rgba(0,229,255,.14);border-radius:10px;padding:12px;margin:8px 0;overflow-x:auto;font-size:13px;}
 .msg-bubble pre code{background:transparent;padding:0;}
@@ -144,13 +170,57 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 .typing-dot:nth-child(3){animation-delay:.4s;}
 @keyframes typing{0%,60%,100%{opacity:.3;transform:translateY(0);}30%{opacity:1;transform:translateY(-4px);}}
 .chat-input-area{width:100%;max-width:860px;padding:10px 18px calc(14px + var(--safe-b));flex-shrink:0;}
-.chat-input-wrap{display:flex;align-items:center;gap:9px;background:rgba(0,229,255,.03);border:1px solid rgba(0,229,255,.18);border-radius:16px;padding:10px 13px;transition:border-color .2s,box-shadow .2s;}
-.chat-input-wrap:focus-within{border-color:rgba(0,229,255,.38);box-shadow:0 0 24px rgba(0,229,255,.07);}
+.chat-input-wrap{display:flex;align-items:center;gap:9px;background:rgba(0,229,255,.035);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.18);border-radius:var(--radius-lg);padding:10px 13px;box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
+.chat-input-wrap:focus-within{border-color:rgba(0,229,255,.38);box-shadow:0 0 24px rgba(0,229,255,.09),inset 0 1px 0 rgba(255,255,255,.04);}
 .chat-textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:14px;font-family:inherit;resize:none;line-height:1.5;max-height:100px;overflow-y:auto;}
 .chat-textarea::placeholder{color:rgba(255,255,255,.25);}
-.btn-send{flex-shrink:0;min-width:36px;min-height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.18);border:1px solid rgba(0,229,255,.38);color:var(--cyan);cursor:pointer;transition:.18s;}
-.btn-send:hover,.btn-send:active{background:rgba(0,229,255,.28);box-shadow:0 0 12px rgba(0,229,255,.28);}
+.btn-send{flex-shrink:0;min-width:36px;min-height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.18);border:1px solid rgba(0,229,255,.38);color:var(--cyan);cursor:pointer;transition:background .18s var(--ease),box-shadow .18s var(--ease),transform .12s var(--ease);}
+.btn-send:hover{background:rgba(0,229,255,.28);box-shadow:0 0 12px rgba(0,229,255,.28);}
+.btn-send:active{transform:scale(.9);}
 .guest-counter{font-size:10px;color:rgba(255,200,0,.6);text-align:center;padding:4px 0 2px;letter-spacing:.04em;}
+
+/* ── DECISION CARD ── */
+.decision-card{margin-top:4px;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:var(--radius-lg);padding:18px 17px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+.dc-header{display:flex;align-items:center;gap:10px;margin-bottom:15px;}
+.dc-header-icon-badge{width:26px;height:26px;border-radius:8px;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.28);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dc-header-icon{color:var(--cyan);flex-shrink:0;}
+.dc-header-title{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--cyan);}
+.dc-section{margin-bottom:16px;}
+.dc-section:last-child{margin-bottom:0;}
+.dc-section-label{font-size:10px;letter-spacing:.1em;color:rgba(0,229,255,.68);text-transform:uppercase;margin-bottom:7px;font-weight:600;}
+.dc-goal{font-size:14px;color:rgba(255,255,255,.9);line-height:1.6;}
+.dc-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.dc-option{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 13px;transition:border-color .2s var(--ease),background .2s var(--ease);}
+.dc-option:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);}
+.dc-option-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:8px;}
+.dc-option-list{list-style:none;font-size:12px;line-height:1.65;}
+.dc-option-list li{padding-left:16px;position:relative;margin-bottom:4px;}
+.dc-benefit::before{content:'+';position:absolute;left:0;color:#4ade80;font-weight:700;}
+.dc-risk::before{content:'!';position:absolute;left:2px;color:#ff8a65;font-weight:700;}
+.dc-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid rgba(255,255,255,.08);}
+.dc-table{width:100%;border-collapse:collapse;font-size:12px;min-width:280px;}
+.dc-table-hint{display:none;font-size:10px;color:rgba(0,229,255,.5);text-align:right;margin-top:5px;letter-spacing:.02em;}
+@media(max-width:480px){.dc-table-hint{display:block;}}
+.dc-table th,.dc-table td{padding:9px 11px;text-align:left;}
+.dc-table th{background:rgba(0,229,255,.08);color:var(--cyan);font-weight:600;font-size:10px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
+.dc-table td{border-top:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.84);}
+.dc-table tr:first-child td{border-top:none;}
+.dc-assumptions{font-size:12px;color:rgba(255,255,255,.55);line-height:1.65;padding-left:15px;}
+.dc-assumptions li{margin-bottom:4px;}
+.dc-next-step{font-size:13.5px;color:rgba(255,255,255,.94);background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.24);border-radius:12px;padding:12px 14px;line-height:1.6;}
+@media(max-width:420px){.dc-options{grid-template-columns:1fr;}}
+
+/* ── CALCULATION CARD (reuses .decision-card/.dc-* shell) ── */
+.cc-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;}
+.cc-input{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;}
+.cc-input-label{display:block;font-size:10px;color:rgba(255,255,255,.45);margin-bottom:3px;}
+.cc-input-value{display:block;font-size:13px;font-weight:600;color:#fff;}
+.cc-steps{padding-left:19px;font-size:13px;line-height:1.75;color:rgba(255,255,255,.85);}
+.cc-steps li{margin-bottom:4px;}
+.cc-result{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.32);border-radius:12px;padding:13px 16px;box-shadow:0 0 20px rgba(0,229,255,.07);}
+.cc-result-label{font-size:12px;color:rgba(255,255,255,.72);}
+.cc-result-value{font-size:20px;font-weight:700;color:var(--cyan);text-shadow:0 0 16px rgba(0,229,255,.35);}
+.cc-disclaimer{margin-top:2px;font-size:11px;color:rgba(255,200,0,.72);line-height:1.55;}
 
 ::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -251,42 +321,70 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
   <nav class="navbar">
     <div class="badge"><span class="dot-live"></span>SOFIA AI v1.0</div>
     <div class="nav-right">
-      <div class="nav-signin" id="nav-signin" onclick="App.openAuth('home')">Sign In</div>
-      <div class="nav-avatar hidden" id="nav-avatar" onclick="App.showProfile()">?</div>
+      <button type="button" class="nav-signin" id="nav-signin" onclick="App.openAuth('home')">Sign In</button>
+      <button type="button" class="nav-avatar hidden" id="nav-avatar" onclick="App.showProfile()">?</button>
     </div>
   </nav>
 
   <div class="home-body">
     <h1 class="hero-title">SOFIA</h1>
-    <p class="hero-tagline">Your AI for Everything</p>
-    <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
-
-    <div class="cat-grid">
-      <div class="cat-card" onclick="App.startChat('finance')">
-        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-        <span class="cat-label">Finance &<br>Business</span><span class="cat-arrow">→</span>
-      </div>
-      <div class="cat-card" onclick="App.startChat('coding')">
-        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        <span class="cat-label">Coding &<br>Tech</span><span class="cat-arrow">→</span>
-      </div>
-      <div class="cat-card" onclick="App.startChat('writing')">
-        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        <span class="cat-label">Creative<br>Writing</span><span class="cat-arrow">→</span>
-      </div>
-      <div class="cat-card" onclick="App.startChat('general')">
-        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        <span class="cat-label">Ask<br>Anything</span><span class="cat-arrow">→</span>
-      </div>
-    </div>
+    <p class="hero-tagline">Your AI Decision Assistant</p>
+    <p class="hero-subhead">Analyze the numbers, compare your options, calculate the outcome, and decide with confidence.</p>
 
     <div class="home-input-wrap">
-      <textarea class="home-textarea" id="home-input" placeholder="Ask me anything..." rows="1" onkeydown="App.homeKeydown(event)" oninput="UI.autoResize(this)"></textarea>
+      <textarea class="home-textarea" id="home-input" placeholder="Ask Sofia to analyze, compare, or calculate anything..." rows="1" onkeydown="App.homeKeydown(event)" oninput="UI.autoResize(this)"></textarea>
       <button class="icon-btn" id="home-mic-btn" onclick="Voice.toggle('home-input','home-mic-btn')" title="Voice input">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
     </div>
     <p class="hint-text"><kbd>Enter</kbd> send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> new line</p>
+
+    <p class="section-label">Try asking Sofia to</p>
+    <div class="action-grid">
+      <button type="button" class="action-card" onclick="App.quickAction('analyze')">
+        <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+        <div class="action-title">Analyze</div>
+        <div class="action-desc">Break down a financial or business question in plain terms.</div>
+      </button>
+      <button type="button" class="action-card" onclick="App.quickAction('compare')">
+        <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+        <div class="action-title">Compare</div>
+        <div class="action-desc">Weigh two or more options side by side.</div>
+      </button>
+      <button type="button" class="action-card" onclick="App.quickAction('calculate')">
+        <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>
+        <div class="action-title">Calculate</div>
+        <div class="action-desc">Work out EMIs, returns, margins, and more — with steps shown.</div>
+      </button>
+      <button type="button" class="action-card" onclick="App.quickAction('decide')">
+        <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 10.5 15 16 9"/></svg></div>
+        <div class="action-title">Decide</div>
+        <div class="action-desc">Get a clear recommendation and a concrete next step.</div>
+      </button>
+    </div>
+
+    <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
+
+    <p class="section-label">Or start a themed chat</p>
+    <div class="cat-grid">
+      <button type="button" class="cat-card" onclick="App.startChat('finance')">
+        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        <span class="cat-label">Finance &<br>Business</span><span class="cat-arrow">→</span>
+      </button>
+      <button type="button" class="cat-card" onclick="App.startChat('coding')">
+        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span class="cat-label">Coding &<br>Tech</span><span class="cat-arrow">→</span>
+      </button>
+      <button type="button" class="cat-card" onclick="App.startChat('writing')">
+        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span class="cat-label">Creative<br>Writing</span><span class="cat-arrow">→</span>
+      </button>
+      <button type="button" class="cat-card" onclick="App.startChat('general')">
+        <svg class="cat-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <span class="cat-label">Ask<br>Anything</span><span class="cat-arrow">→</span>
+      </button>
+    </div>
+
     <p class="credit">Sofia AI — by Vansh Chaudhary</p>
   </div>
 </div>
@@ -336,14 +434,17 @@ const CONFIG = {
   maxTokens: 1500,
   maxHistory: 20,
   demoDelay: { min: 900, max: 1700 },
+  // DEV/TESTING: set to false to allow unlimited guest messages with no auth wall.
+  // Set back to true for production/beta to re-enable the guest limit below.
+  guestLimitEnabled: false,
   guestMessageLimit: 2,
   firebase: {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCQk0kf1FpB4LDKYkpaA40VQ_iM5hpEDk8",
+    authDomain: "sofia-ai-20178.firebaseapp.com",
+    projectId: "sofia-ai-20178",
+    storageBucket: "sofia-ai-20178.firebasestorage.app",
+    messagingSenderId: "1008709602454",
+    appId: "1:1008709602454:web:2e6fd1ede0f349863f86b7"
   }
 };
 
@@ -378,6 +479,63 @@ const DEMO = {
     "Good question! 🤔 The simplest approach that actually gets done usually beats the perfect plan that never starts.\n\nWhat's the specific situation you're working through?",
     "Try this 👋: focus on one task, 25 minutes at a time, short break after. Simple, and it works.\n\nWant help prioritizing what to focus on first?",
   ],
+  decision: [
+    "Good one to think through carefully 🤔\n\n```decision-card\n{\"goal\":\"Decide where to park an emergency fund so it's safe and accessible.\",\"options\":[{\"name\":\"Savings Account\",\"benefits\":[\"Instant access\",\"Zero risk to principal\",\"Easy to set up\"],\"risks\":[\"Returns barely beat inflation\"]},{\"name\":\"Liquid Mutual Fund\",\"benefits\":[\"Higher potential returns\"],\"risks\":[\"Value can dip right when you need cash\",\"Withdrawal can take 1-3 days\",\"Possible exit load if redeemed early\"]}],\"comparison\":[{\"criteria\":\"Liquidity\",\"values\":{\"Savings Account\":\"Instant\",\"Liquid Mutual Fund\":\"1-3 days\"}},{\"criteria\":\"Risk\",\"values\":{\"Savings Account\":\"Very low\",\"Liquid Mutual Fund\":\"Low-medium\"}},{\"criteria\":\"Typical Returns\",\"values\":{\"Savings Account\":\"~3-4%\",\"Liquid Mutual Fund\":\"~6-8%\"}}],\"assumptions\":[\"Assumes the fund may need to be withdrawn on short notice\",\"Actual returns vary by bank and fund\"],\"nextStep\":\"Keep 3-6 months of expenses in a savings account for instant access, and only route extra buffer into a liquid fund once that base is fully covered.\"}\n```",
+    "Let's break this down properly 📊\n\n```decision-card\n{\"goal\":\"Choose the better option for this decision given the trade-offs involved.\",\"options\":[{\"name\":\"Option A\",\"benefits\":[\"Faster to get started\",\"Lower upfront cost\"],\"risks\":[\"May not scale well long-term\"]},{\"name\":\"Option B\",\"benefits\":[\"Stronger long-term fit\"],\"risks\":[\"Higher upfront cost\",\"Steeper learning curve\"]}],\"comparison\":[{\"criteria\":\"Upfront Cost\",\"values\":{\"Option A\":\"Low\",\"Option B\":\"Higher\"}},{\"criteria\":\"Long-term Fit\",\"values\":{\"Option A\":\"Moderate\",\"Option B\":\"Strong\"}}],\"assumptions\":[\"This is illustrative — share more specifics for a tailored comparison\"],\"nextStep\":\"Tell me more about your priorities (budget, timeline, must-haves) and I'll tailor this comparison to your actual situation.\"}\n```",
+  ],
+  calc: [
+    "Let's work through this step by step 🧮\n\n```calc-card\n{\"question\":\"Monthly EMI for a loan of ₹5,00,000 at 9% annual interest for 3 years\",\"inputs\":[{\"label\":\"Principal (P)\",\"value\":\"₹5,00,000\"},{\"label\":\"Annual Interest Rate\",\"value\":\"9%\"},{\"label\":\"Tenure\",\"value\":\"3 years (36 months)\"}],\"method\":\"EMI formula: EMI = P × r × (1+r)^n / ((1+r)^n − 1), where r is the monthly interest rate\",\"steps\":[\"Monthly rate r = 9% / 12 = 0.75% = 0.0075\",\"Number of months n = 3 × 12 = 36\",\"(1+r)^n = (1.0075)^36 ≈ 1.3097\",\"EMI = 500000 × 0.0075 × 1.3097 / (1.3097 − 1) ≈ ₹15,860\"],\"result\":{\"label\":\"Monthly EMI\",\"value\":\"≈ ₹15,860\"},\"assumptions\":[\"Assumes a fixed interest rate for the full tenure\",\"Actual EMI may vary slightly by lender's rounding/day-count method\"]}\n```",
+    "Here's the calculation 📊\n\n```calc-card\n{\"question\":\"Percentage change in revenue from ₹80,000 last month to ₹95,000 this month\",\"inputs\":[{\"label\":\"Old Value\",\"value\":\"₹80,000\"},{\"label\":\"New Value\",\"value\":\"₹95,000\"}],\"method\":\"Percentage change = (New − Old) / Old × 100\",\"steps\":[\"Difference = 95,000 − 80,000 = 15,000\",\"Percentage change = 15,000 / 80,000 × 100\",\"= 18.75%\"],\"result\":{\"label\":\"Percentage Change\",\"value\":\"+18.75%\"},\"assumptions\":[\"Assumes both figures are for the same category/currency and time basis\"]}\n```",
+  ],
+};
+
+/* ═══════════════════════════════════════
+   DECISION MODE — detects comparison questions
+   and asks Sofia for a structured decision-card
+   fenced block (parsed + rendered by DecisionUI)
+═══════════════════════════════════════ */
+const DecisionMode = {
+  isDecisionQuery(text) {
+    const t = (text || '').toLowerCase();
+    const patterns = [
+      /\bvs\.?\b/, /\bversus\b/, /which (one )?is better/, /which (should|would) i/,
+      /should i (choose|pick|go with|use|buy|select|opt for)/, /compare\b.*\band\b/,
+      /pros and cons/, /better choice/, /which option/, /\b[a-z]{2,}\s+or\s+[a-z]{2,}\b.*\?\s*$/,
+    ];
+    return patterns.some(p => p.test(t));
+  },
+
+  buildInstruction(text) {
+    return text + "\n\n[SYSTEM: This is a decision/comparison question. Respond with ONLY one fenced code block labeled \"decision-card\" containing valid JSON in exactly this shape, nothing outside the block:\n{\"goal\":\"short restatement of what the user is deciding\",\"options\":[{\"name\":\"Option name\",\"benefits\":[\"...\"],\"risks\":[\"...\"]}],\"comparison\":[{\"criteria\":\"criterion name\",\"values\":{\"Option name\":\"short value\"}}],\"assumptions\":[\"...\"],\"nextStep\":\"one concrete recommended next step\"}\nBe concise and honest about missing info. Option names inside comparison.values must exactly match options[].name.]";
+  },
+};
+
+/* ═══════════════════════════════════════
+   CALC MODE — sibling to DecisionMode. Detects
+   calculation/computation questions (EMI, SIP,
+   percentage change, profit/loss, margin,
+   break-even, etc.) and asks Sofia for a
+   structured calc-card fenced block (parsed +
+   rendered by CalcUI)
+═══════════════════════════════════════ */
+const CalcMode = {
+  isCalculationQuery(text) {
+    const t = (text || '').toLowerCase();
+    const patterns = [
+      /\bcalculate\b/, /\bcompute\b/, /\bemi\b/, /\bsip\b/,
+      /\bcompound interest\b/, /\bsimple interest\b/,
+      /\bpercentage (change|increase|decrease)\b/, /%\s*(of|increase|decrease|change)\b/,
+      /\bprofit\s*(\/|or)?\s*loss\b/, /\bprofit margin\b/, /\bmargin\b/, /\bbreak[\s-]?even\b/,
+      /\breturn on investment\b/, /\broi\b/, /\bmonthly (payment|installment)\b/,
+      /\bhow much (is|will|would|does|do)\b.*\d/, // broad phrase - require a number to reduce false positives
+      /\bwhat (is|will|would) (the|my)\b.*\b(emi|interest|return|profit|margin|cost|payment|total|value)\b/,
+    ];
+    return patterns.some(p => p.test(t));
+  },
+
+  buildInstruction(text) {
+    return text + "\n\n[SYSTEM: This is a calculation/computation question. Respond with ONLY one fenced code block labeled \"calc-card\" containing valid JSON in exactly this shape, nothing outside the block:\n{\"question\":\"short restatement of what is being calculated\",\"inputs\":[{\"label\":\"input name\",\"value\":\"input value with units\"}],\"method\":\"short name of the formula/approach used\",\"steps\":[\"step 1 with real numbers\",\"step 2 ...\"],\"result\":{\"label\":\"result name\",\"value\":\"final computed value with units\"},\"assumptions\":[\"...\"]}\nShow real arithmetic in steps, not just the final answer. Be honest about assumptions or missing info, and do not claim the result is guaranteed exact.]";
+  },
 };
 
 /* ═══════════════════════════════════════
@@ -412,17 +570,31 @@ const Auth = {
       App.onAuthReady();
       return;
     }
+    let resolved = false;
+    const resolveOnce = () => {
+      if (resolved) return;
+      resolved = true;
+      this.ready = true;
+      App.onAuthReady();
+    };
     try {
       firebase.initializeApp(CONFIG.firebase);
       firebase.auth().onAuthStateChanged(user => {
         this.user = user;
-        this.ready = true;
-        App.onAuthReady();
+        // If the fallback below already rendered the app, just refresh the
+        // navbar to reflect a late-arriving real auth state instead of
+        // re-triggering navigation.
+        if (resolved) { UI.updateNavbarForAuth(); return; }
+        resolveOnce();
       });
     } catch (e) {
-      this.ready = true;
-      App.onAuthReady();
+      resolveOnce();
     }
+    // Safety net: Firebase's auth-state callback can be delayed or never fire
+    // (Authentication not yet enabled in the project, network issue, ad
+    // blocker, etc.). Don't leave the whole app stuck on a black screen —
+    // fall back to the logged-out view after a short wait.
+    setTimeout(resolveOnce, 3500);
   },
 
   isLoggedIn() { return !!this.user; },
@@ -442,6 +614,7 @@ const Auth = {
 
   async signInGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     const result = await firebase.auth().signInWithPopup(provider);
     this.user = result.user;
     return this.user;
@@ -476,8 +649,116 @@ const Auth = {
       'auth/popup-blocked': 'Popup blocked. Please allow popups and try again.',
       'auth/network-request-failed': 'Network error. Check your connection.',
       'auth/missing-password': 'Please enter a password.',
+      'auth/operation-not-supported-in-this-environment': "Google Sign-In needs a real web address. Please open https://sofia-ai-20178.firebaseapp.com in your browser instead of opening this file directly.",
     };
+    // A real Firebase Auth error always has a `.code`. Anything without one
+    // (e.g. the Firebase SDK script itself failed to load, blocked by a
+    // network issue or an ad blocker) is not a Firebase error at all, so its
+    // raw technical message (like "firebase is not defined") must not leak
+    // to the user as-is.
+    if (!err || !err.code) return 'Sign-in is temporarily unavailable. Please check your connection (or disable any ad blocker) and try again.';
     return map[err.code] || err.message || 'Something went wrong. Please try again.';
+  },
+};
+
+/* ═══════════════════════════════════════
+   PERSISTENCE — Firestore wrapper (foundation only).
+   Reuses the single firebase app already initialized by
+   Auth.init() — does not create a second app instance.
+   Not called from anywhere yet: wiring into sendMessage,
+   startChat, clearChat, login restore, and logout is a
+   separate follow-up step. Every method fails safe (logs
+   and returns null) so a Firestore outage can never break
+   chat, auth, or any existing feature.
+═══════════════════════════════════════ */
+const Persistence = {
+  _db: null,
+
+  // Persistence only ever activates for a signed-in user with Firebase
+  // configured — guests and BYOK-only users never touch Firestore.
+  isAvailable() {
+    return Auth.isConfigured() && Auth.isLoggedIn() && typeof firebase !== 'undefined' && !!firebase.firestore;
+  },
+
+  _getDb() {
+    if (!this._db) this._db = firebase.firestore();
+    return this._db;
+  },
+
+  // Creates users/{uid}/sessions/{sessionId} and points
+  // users/{uid}.activeSessionId at it. Returns the new sessionId, or null
+  // on any failure.
+  async startSession(uid, category) {
+    if (!this.isAvailable() || !uid) return null;
+    try {
+      const db = this._getDb();
+      const userRef = db.collection('users').doc(uid);
+      const sessionRef = userRef.collection('sessions').doc();
+      const now = firebase.firestore.FieldValue.serverTimestamp();
+      await sessionRef.set({
+        category,
+        createdAt: now,
+        updatedAt: now,
+        schemaVersion: 1,
+      });
+      await userRef.set({ activeSessionId: sessionRef.id, updatedAt: now }, { merge: true });
+      return sessionRef.id;
+    } catch (e) {
+      console.warn('Persistence.startSession failed:', e);
+      return null;
+    }
+  },
+
+  // Appends one message (role/content — the exact same shape already used
+  // by State.history, including any embedded decision-card/calc-card fenced
+  // block) to users/{uid}/sessions/{sessionId}/messages. Returns the new
+  // messageId, or null on any failure.
+  async appendMessage(uid, sessionId, message) {
+    if (!this.isAvailable() || !uid || !sessionId || !message) return null;
+    try {
+      const db = this._getDb();
+      const sessionRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+      const now = firebase.firestore.FieldValue.serverTimestamp();
+      const messageRef = sessionRef.collection('messages').doc();
+      await messageRef.set({
+        role: message.role,
+        content: message.content,
+        createdAt: now,
+        order: Date.now(),
+      });
+      await sessionRef.set({ updatedAt: now }, { merge: true });
+      return messageRef.id;
+    } catch (e) {
+      console.warn('Persistence.appendMessage failed:', e);
+      return null;
+    }
+  },
+
+  // Reads users/{uid}.activeSessionId and returns that session's category
+  // plus its messages in order, or null if there is none / on any failure.
+  async loadActiveSession(uid) {
+    if (!this.isAvailable() || !uid) return null;
+    try {
+      const db = this._getDb();
+      const userDoc = await db.collection('users').doc(uid).get();
+      const activeSessionId = userDoc.exists ? userDoc.data().activeSessionId : null;
+      if (!activeSessionId) return null;
+      const sessionRef = db.collection('users').doc(uid).collection('sessions').doc(activeSessionId);
+      const sessionDoc = await sessionRef.get();
+      if (!sessionDoc.exists) return null;
+      const messagesSnap = await sessionRef.collection('messages').orderBy('order', 'asc').get();
+      const messages = messagesSnap.docs.map(d => ({ role: d.data().role, content: d.data().content }));
+      return { sessionId: activeSessionId, category: sessionDoc.data().category, messages };
+    } catch (e) {
+      console.warn('Persistence.loadActiveSession failed:', e);
+      return null;
+    }
+  },
+
+  // Resets any locally cached handle/pointer. Called on logout so a
+  // subsequent guest or different-account session starts clean.
+  clearLocalPointers() {
+    this._db = null;
   },
 };
 
@@ -538,15 +819,30 @@ const AuthUI = {
    API CLIENT — abstracted for Phase 2 switch
 ═══════════════════════════════════════ */
 const SofiaAPI = {
-  async chat(messages, category) {
-    if (State.isDemo || CONFIG.mode === 'byok-fallback-demo') return this._demoResponse(category);
-    if (CONFIG.mode === 'managed') return this._callBackend(messages, category);
-    if (State.apiKey) return this._callDirect(messages, category);
+  // responseType: null (plain chat) | 'decision' | 'calc' — the two structured
+  // response types. Kept as a plain string rather than separate booleans so a
+  // future third type doesn't require another parameter.
+  async chat(messages, category, responseType) {
+    if (State.isDemo || CONFIG.mode === 'byok-fallback-demo') return this._demoResponse(category, responseType);
+    if (CONFIG.mode === 'managed') return this._callBackend(messages, category, responseType);
+    if (State.apiKey) return this._callDirect(messages, category, responseType);
     // No backend yet and no dev key — use demo content silently for real users (no bill, no banner)
-    return this._demoResponse(category);
+    return this._demoResponse(category, responseType);
   },
 
-  async _callDirect(messages, category) {
+  // Only the outgoing API copy of the last user turn is annotated with the
+  // structured-response instruction — the message as stored/displayed in chat stays untouched.
+  _prepareMessages(messages, responseType) {
+    if (!responseType || !messages.length) return messages;
+    const last = messages[messages.length - 1];
+    if (last.role !== 'user') return messages;
+    const builder = responseType === 'calc' ? CalcMode.buildInstruction : DecisionMode.buildInstruction;
+    const copy = messages.slice();
+    copy[copy.length - 1] = { ...last, content: builder(last.content) };
+    return copy;
+  },
+
+  async _callDirect(messages, category, responseType) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -557,7 +853,7 @@ const SofiaAPI = {
       },
       body: JSON.stringify({
         model: CONFIG.model, max_tokens: CONFIG.maxTokens,
-        system: PROMPTS[category], messages: messages.slice(-CONFIG.maxHistory),
+        system: PROMPTS[category], messages: this._prepareMessages(messages.slice(-CONFIG.maxHistory), responseType),
       }),
     });
     if (!res.ok) {
@@ -568,20 +864,22 @@ const SofiaAPI = {
     return data.content[0].text;
   },
 
-  async _callBackend(messages, category) {
+  async _callBackend(messages, category, responseType) {
     const res = await fetch(`${CONFIG.backendUrl}/chat`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, category }), credentials: 'include',
+      body: JSON.stringify({ messages: this._prepareMessages(messages, responseType), category, responseType: responseType || null }), credentials: 'include',
     });
     if (!res.ok) throw new Error(`Backend error ${res.status}`);
     const data = await res.json();
     return data.reply;
   },
 
-  async _demoResponse(category) {
+  async _demoResponse(category, responseType) {
     const delay = CONFIG.demoDelay.min + Math.random() * (CONFIG.demoDelay.max - CONFIG.demoDelay.min);
     await new Promise(r => setTimeout(r, delay));
-    const pool = DEMO[category] || DEMO.general;
+    const pool = responseType === 'calc' ? DEMO.calc
+               : responseType === 'decision' ? DEMO.decision
+               : (DEMO[category] || DEMO.general);
     return pool[Math.floor(Math.random() * pool.length)];
   },
 };
@@ -601,7 +899,8 @@ const UI = {
 
   initials(name) {
     if (!name) return '?';
-    const parts = name.trim().split(' ');
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
     return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
   },
 
@@ -613,7 +912,12 @@ const UI = {
       signinEl.classList.add('hidden');
       avatarEl.classList.remove('hidden');
       if (p.photo) {
-        avatarEl.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="">`;
+        avatarEl.textContent = '';
+        const img = document.createElement('img');
+        img.src = p.photo;
+        img.alt = '';
+        img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+        avatarEl.appendChild(img);
       } else {
         avatarEl.textContent = UI.initials(p.name);
       }
@@ -626,7 +930,7 @@ const UI = {
   updateGuestCounter() {
     const el = document.getElementById('guest-counter');
     if (!el) return;
-    if (Auth.isLoggedIn()) { el.classList.add('hidden'); return; }
+    if (!CONFIG.guestLimitEnabled || Auth.isLoggedIn()) { el.classList.add('hidden'); return; }
     const remaining = Math.max(0, CONFIG.guestMessageLimit - State.guestMsgCount);
     if (remaining > 0) {
       el.classList.remove('hidden');
@@ -640,9 +944,23 @@ const UI = {
     const container = document.getElementById('messages');
     const div = document.createElement('div');
     div.className = `msg ${role}`;
-    div.innerHTML = role === 'sofia'
-      ? `<div class="msg-avatar"></div><div class="msg-bubble">${this._formatText(text)}</div>`
-      : `<div class="msg-bubble">${this._escapeHtml(text)}</div>`;
+    if (role === 'sofia') {
+      const decision = DecisionUI.extract(text);
+      const calc = !decision ? CalcUI.extract(text) : null;
+      if (decision) {
+        const beforeHtml = decision.before ? this._formatText(decision.before) : '';
+        const afterHtml = decision.after ? this._formatText(decision.after) : '';
+        div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${beforeHtml}${DecisionUI.render(decision.data)}${afterHtml}</div>`;
+      } else if (calc) {
+        const beforeHtml = calc.before ? this._formatText(calc.before) : '';
+        const afterHtml = calc.after ? this._formatText(calc.after) : '';
+        div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${beforeHtml}${CalcUI.render(calc.data)}${afterHtml}</div>`;
+      } else {
+        div.innerHTML = `<div class="msg-avatar"></div><div class="msg-bubble">${this._formatText(text)}</div>`;
+      }
+    } else {
+      div.innerHTML = `<div class="msg-bubble">${this._escapeHtml(text)}</div>`;
+    }
     container.appendChild(div);
     this._scrollBottom(container);
     return div;
@@ -661,7 +979,7 @@ const UI = {
   _escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); },
   _formatText(t) {
     t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    t = t.replace(/```[\w]*\n?([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    t = t.replace(/```[\w-]*\n?([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
     t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
     t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     t = t.replace(/^- (.*?)$/gm, '• $1');
@@ -671,9 +989,197 @@ const UI = {
 };
 
 /* ═══════════════════════════════════════
+   DECISION CARD RENDERER — parses a
+   ```decision-card fenced JSON block out of
+   a Sofia reply and renders it as a themed card
+═══════════════════════════════════════ */
+const DecisionUI = {
+  extract(text) {
+    const re = /```decision-card\n?([\s\S]*?)```/;
+    const m = re.exec(text || '');
+    if (!m) return null;
+    let data;
+    try { data = JSON.parse(m[1].trim()); } catch (e) { return null; }
+    if (!data || !Array.isArray(data.options)) return null;
+    return { data, before: text.slice(0, m.index).trim(), after: text.slice(m.index + m[0].length).trim() };
+  },
+
+  render(data) {
+    const esc = UI._escapeHtml;
+    const goal = esc(data.goal || '');
+    const options = Array.isArray(data.options) ? data.options : [];
+    const comparison = Array.isArray(data.comparison) ? data.comparison : [];
+    const assumptions = Array.isArray(data.assumptions) ? data.assumptions : [];
+    const nextStep = esc(data.nextStep || '');
+
+    const optionsHtml = options.map(o => `
+      <div class="dc-option">
+        <div class="dc-option-name">${esc(o.name || '')}</div>
+        <ul class="dc-option-list">
+          ${(o.benefits || []).map(b => `<li class="dc-benefit">${esc(b)}</li>`).join('')}
+          ${(o.risks || []).map(r => `<li class="dc-risk">${esc(r)}</li>`).join('')}
+        </ul>
+      </div>`).join('');
+
+    let tableHtml = '';
+    if (comparison.length && options.length) {
+      const names = options.map(o => o.name || '');
+      tableHtml = `
+        <div class="dc-table-wrap"><table class="dc-table">
+          <thead><tr><th>Criteria</th>${names.map(n => `<th>${esc(n)}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${comparison.map(row => `<tr><td>${esc(row.criteria || '')}</td>${names.map(n => { const v = row.values && row.values[n]; return `<td>${esc(v != null && v !== '' ? String(v) : '—')}</td>`; }).join('')}</tr>`).join('')}
+          </tbody>
+        </table></div>
+        <div class="dc-table-hint">Swipe to see all options →</div>`;
+    }
+
+    const assumptionsHtml = assumptions.length
+      ? `<ul class="dc-assumptions">${assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>`
+      : `<p class="dc-assumptions" style="padding-left:0;">None noted.</p>`;
+
+    return `
+      <div class="decision-card">
+        <div class="dc-header">
+          <span class="dc-header-icon-badge"><svg class="dc-header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+          <span class="dc-header-title">DECISION CARD</span>
+        </div>
+        <div class="dc-section"><div class="dc-section-label">Goal</div><div class="dc-goal">${goal}</div></div>
+        ${options.length ? `<div class="dc-section"><div class="dc-section-label">Options</div><div class="dc-options">${optionsHtml}</div></div>` : ''}
+        ${tableHtml ? `<div class="dc-section"><div class="dc-section-label">Comparison</div>${tableHtml}</div>` : ''}
+        <div class="dc-section"><div class="dc-section-label">Assumptions &amp; Missing Info</div>${assumptionsHtml}</div>
+        ${nextStep ? `<div class="dc-section"><div class="dc-section-label">Sofia's Suggested Next Step</div><div class="dc-next-step">${nextStep}</div></div>` : ''}
+      </div>`;
+  },
+};
+
+/* ═══════════════════════════════════════
+   CALCULATION CARD RENDERER — parses a
+   ```calc-card fenced JSON block out of a
+   Sofia reply and renders it as a themed card,
+   reusing DecisionUI's visual system
+═══════════════════════════════════════ */
+const CalcUI = {
+  extract(text) {
+    const re = /```calc-card\n?([\s\S]*?)```/;
+    const m = re.exec(text || '');
+    if (!m) return null;
+    let data;
+    try { data = JSON.parse(m[1].trim()); } catch (e) { return null; }
+    if (!data || typeof data !== 'object' || !data.result || typeof data.result !== 'object' || !Array.isArray(data.steps)) return null;
+    return { data, before: text.slice(0, m.index).trim(), after: text.slice(m.index + m[0].length).trim() };
+  },
+
+  render(data) {
+    const esc = UI._escapeHtml;
+    const question = esc(data.question || '');
+    const method = esc(data.method || '');
+    const inputs = Array.isArray(data.inputs) ? data.inputs : [];
+    const steps = Array.isArray(data.steps) ? data.steps : [];
+    const assumptions = Array.isArray(data.assumptions) ? data.assumptions : [];
+    const resultLabel = esc((data.result && data.result.label) || 'Result');
+    const resultValue = esc(data.result && data.result.value != null && data.result.value !== '' ? String(data.result.value) : '—');
+
+    const inputsHtml = inputs.length
+      ? `<div class="cc-inputs">${inputs.map(i => `<div class="cc-input"><span class="cc-input-label">${esc(i && i.label || '')}</span><span class="cc-input-value">${esc(i && i.value != null ? String(i.value) : '')}</span></div>`).join('')}</div>`
+      : '';
+
+    const stepsHtml = steps.length
+      ? `<ol class="cc-steps">${steps.map(s => `<li>${esc(String(s))}</li>`).join('')}</ol>`
+      : '';
+
+    const assumptionsHtml = assumptions.length
+      ? `<ul class="dc-assumptions">${assumptions.map(a => `<li>${esc(String(a))}</li>`).join('')}</ul>`
+      : `<p class="dc-assumptions" style="padding-left:0;">None noted.</p>`;
+
+    return `
+      <div class="decision-card">
+        <div class="dc-header">
+          <span class="dc-header-icon-badge"><svg class="dc-header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></span>
+          <span class="dc-header-title">CALCULATION</span>
+        </div>
+        ${question ? `<div class="dc-section"><div class="dc-section-label">Question</div><div class="dc-goal">${question}</div></div>` : ''}
+        ${inputsHtml ? `<div class="dc-section"><div class="dc-section-label">Inputs</div>${inputsHtml}</div>` : ''}
+        ${method ? `<div class="dc-section"><div class="dc-section-label">Method</div><div class="dc-goal">${method}</div></div>` : ''}
+        ${stepsHtml ? `<div class="dc-section"><div class="dc-section-label">Step-by-Step</div>${stepsHtml}</div>` : ''}
+        <div class="dc-section"><div class="dc-section-label">Result</div><div class="cc-result"><span class="cc-result-label">${resultLabel}</span><span class="cc-result-value">${resultValue}</span></div></div>
+        <div class="dc-section"><div class="dc-section-label">Assumptions</div>${assumptionsHtml}</div>
+        <div class="cc-disclaimer">⚠️ Calculated by AI — please double-check important figures independently.</div>
+      </div>`;
+  },
+};
+
+/* ═══════════════════════════════════════
    ORB ANIMATION
 ═══════════════════════════════════════ */
 const Orb = {
+  // Clean state-based structure — Orb.init() stays the only mount point;
+  // any code anywhere can drive the visual purely via setState()/pulse().
+  //   idle     — Phase 1 (static premium orb) + Phase 2 (idle breathing)
+  //   thinking — Phase 3 (rotating rings, active particles)
+  //   speaking — Phase 4 (reactive glow, fallback envelope — see
+  //              setAudioLevel() for the future real-audio hook)
+  //   error    — Phase 5 (alert — orange, calm, not aggressive)
+  //   success  — Phase 5 (positive/highlighted — green, gentle bloom)
+  // error/success are transient: drive them with pulse(), which
+  // auto-reverts to idle unless a newer state has since superseded it.
+  state: 'idle',
+  _canvas: null,
+  _particles: null,
+  _sparkles: null,
+  _brand: null,
+  _startTime: 0,
+  _stateChangedAt: 0,
+  _stateToken: 0,
+  // Fallback speaking envelope — see setAudioLevel().
+  _audioLevel: 0,
+  _audioLevelSetAt: 0,
+
+  // Switches the Orb's visual state immediately. Returns a token that a
+  // caller can hold onto (see pulse()) to detect whether this state has
+  // since been superseded by a later call.
+  setState(state) {
+    this.state = state;
+    this._stateChangedAt = performance.now();
+    this._stateToken++;
+    return this._stateToken;
+  },
+
+  // Sets a transient state (e.g. 'error', 'success') that automatically
+  // reverts to 'idle' after durationMs — unless a newer setState()/pulse()
+  // call has already moved the Orb on, in which case this stale timer is a
+  // safe no-op (guarded by the state token) instead of clobbering it.
+  pulse(state, durationMs) {
+    const token = this.setState(state);
+    setTimeout(() => {
+      if (this._stateToken === token) this.setState('idle');
+    }, durationMs);
+    return token;
+  },
+
+  // Future real-audio hook for Phase 4: if something ever feeds real
+  // playback amplitude here (0..1) while state === 'speaking', the
+  // renderer uses it directly. Nothing calls this today — no TTS/audio
+  // output exists in SOFIA yet (voice input is speech-to-text only, via
+  // SpeechRecognition, which exposes no amplitude data) — so 'speaking'
+  // always falls back to a clean synthetic envelope until this is wired
+  // to something real.
+  setAudioLevel(level) {
+    this._audioLevel = Math.max(0, Math.min(1, level));
+    this._audioLevelSetAt = performance.now();
+  },
+
+  // Convenience for the chat flow: shows 'speaking' for a duration scaled
+  // to the reply length, then a brief 'success' confirmation, then back to
+  // idle. Token-guarded so a fast follow-up message safely supersedes it.
+  speakThenConfirm(replyLength) {
+    const token = this.setState('speaking');
+    const speakMs = Math.min(4000, 1200 + (replyLength || 0) * 6);
+    setTimeout(() => {
+      if (this._stateToken === token) this.pulse('success', 700);
+    }, speakMs);
+  },
+
   init() {
     if (State.orbRaf) cancelAnimationFrame(State.orbRaf);
     const canvas = document.getElementById('orb-canvas');
@@ -681,42 +1187,348 @@ const Orb = {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const isMobile = window.innerWidth < 600;
-    const SIZE = isMobile ? 280 : 340;
+    const SIZE = isMobile ? 300 : 400;
     canvas.width = SIZE * dpr; canvas.height = SIZE * dpr;
     canvas.style.width = SIZE + 'px'; canvas.style.height = SIZE + 'px';
     ctx.scale(dpr, dpr);
-    const N = SIZE, cx = N/2, cy = N/2, R = N*0.32;
-    const particleCount = isMobile ? 32 : 52;
-    let t = 0;
-    const particles = Array.from({length:particleCount},(_,i)=>({
-      angle:(i/particleCount)*Math.PI*2, radius:R*0.85+Math.random()*R*0.65,
-      speed:0.0018+Math.random()*0.003, size:0.6+Math.random()*1.2, phase:Math.random()*Math.PI*2,
+    this._canvas = canvas;
+
+    const N = SIZE, cx = N / 2, cy = N / 2, R = N * 0.32;
+    // Extremely subtle, slow drift — a handful of particles, not a swarm.
+    const particleCount = isMobile ? 9 : 14;
+    this._particles = Array.from({ length: particleCount }, (_, i) => ({
+      angle: (i / particleCount) * Math.PI * 2,
+      radius: R * 0.75 + Math.random() * R * 0.32,
+      speed: 0.00006 + Math.random() * 0.00007,
+      size: 0.6 + Math.random() * 0.9,
+      phase: Math.random() * Math.PI * 2,
     }));
-    const draw = () => {
-      ctx.clearRect(0,0,N,N);
-      [R+50,R+32,R+17].forEach((rr,i)=>{ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.strokeStyle=`rgba(0,229,255,${.035-i*.01})`;ctx.lineWidth=1;ctx.stroke();});
-      const g = ctx.createRadialGradient(cx-R*.25,cy-R*.2,R*.04,cx,cy,R);
-      g.addColorStop(0,'rgba(0,229,255,.18)');g.addColorStop(.35,'rgba(0,140,210,.12)');
-      g.addColorStop(.75,'rgba(0,40,90,.2)');g.addColorStop(1,'rgba(0,8,25,.04)');
-      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
-      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(0,229,255,${.68+Math.sin(t*.025)*.14})`;
-      ctx.lineWidth=1.6;ctx.shadowColor='#00e5ff';ctx.shadowBlur=14;ctx.stroke();ctx.shadowBlur=0;
-      ctx.save();ctx.beginPath();ctx.arc(cx,cy,R-2,0,Math.PI*2);ctx.clip();
-      [{dy:-16,amp:26,freq:.018,phase:0,alpha:.62},{dy:0,amp:18,freq:.022,phase:1.4,alpha:.42},{dy:16,amp:12,freq:.016,phase:2.8,alpha:.26}].forEach(({dy,amp,freq,phase,alpha})=>{
-        ctx.beginPath();
-        for(let x=cx-R;x<=cx+R;x+=2){const dx=(x-cx)/R,mask=Math.sqrt(Math.max(0,1-dx*dx));const y=cy+dy+Math.sin(x*freq+t*.038+phase)*amp*mask;x===Math.ceil(cx-R)?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-        ctx.strokeStyle=`rgba(0,229,255,${alpha})`;ctx.lineWidth=1.4;ctx.shadowColor='#00e5ff';ctx.shadowBlur=5;ctx.stroke();
-      });
-      ctx.restore();ctx.shadowBlur=0;
-      particles.forEach(p=>{p.angle+=p.speed;const px=cx+Math.cos(p.angle)*p.radius,py=cy+Math.sin(p.angle)*p.radius*.55;const al=Math.max(0,.08+Math.sin(t*.032+p.phase)*.18);ctx.beginPath();ctx.arc(px,py,p.size,0,Math.PI*2);ctx.fillStyle=`rgba(0,229,255,${al})`;ctx.fill();});
-      const beam=ctx.createLinearGradient(cx,cy+R,cx,N*.87);
-      beam.addColorStop(0,`rgba(0,229,255,${.28+Math.sin(t*.03)*.08})`);beam.addColorStop(1,'rgba(0,229,255,0)');
-      ctx.beginPath();ctx.moveTo(cx-2,cy+R);ctx.lineTo(cx+2,cy+R);ctx.lineTo(cx+18,N*.87);ctx.lineTo(cx-18,N*.87);ctx.closePath();ctx.fillStyle=beam;ctx.fill();
-      [[62,10],[42,6.5],[24,4]].forEach(([rx,ry],i)=>{ctx.beginPath();ctx.ellipse(cx,N*.87,rx,ry,0,0,Math.PI*2);ctx.strokeStyle=`rgba(0,229,255,${.26-i*.07})`;ctx.lineWidth=.9;ctx.stroke();});
-      t++; State.orbRaf = requestAnimationFrame(draw);
+    // Floating sparkles in the glow field just outside the rim.
+    const sparkleCount = isMobile ? 6 : 10;
+    this._sparkles = Array.from({ length: sparkleCount }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 1.05 + Math.random() * 0.45;
+      return {
+        dx: Math.cos(angle) * dist,
+        dy: Math.sin(angle) * dist,
+        size: 0.7 + Math.random() * 1.1,
+        period: 1800 + Math.random() * 1800,
+        phase: Math.random() * Math.PI * 2,
+        maxAlpha: 0.35 + Math.random() * 0.35,
+      };
+    });
+    this._computeBrandLayout(ctx, R);
+    // Orbitron may still be downloading on first paint; re-measure once
+    // web fonts are ready so the branding stays correctly centered.
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (this._canvas === canvas) this._computeBrandLayout(ctx, R);
+      }).catch(() => {});
+    }
+    this._startTime = performance.now();
+
+    const draw = (now) => {
+      const elapsed = now - this._startTime;
+      switch (this.state) {
+        case 'thinking': this._renderThinking(ctx, N, cx, cy, R, elapsed); break;
+        case 'speaking': this._renderSpeaking(ctx, N, cx, cy, R, elapsed); break;
+        case 'error':    this._renderError(ctx, N, cx, cy, R, elapsed); break;
+        case 'success':  this._renderSuccess(ctx, N, cx, cy, R, elapsed); break;
+        case 'idle':
+        default:
+          this._renderIdle(ctx, N, cx, cy, R, elapsed);
+      }
+      State.orbRaf = requestAnimationFrame(draw);
     };
-    draw();
+    State.orbRaf = requestAnimationFrame(draw);
+  },
+
+  _computeBrandLayout(ctx, R) {
+    const label = 'SOFIA';
+    const fontSize = Math.round(R * 0.22);
+    ctx.font = `700 ${fontSize}px 'Orbitron', monospace`;
+    const letterSpacing = fontSize * 0.2; // 0.2em, per the premium-orb spec
+    const widths = [...label].map(ch => ctx.measureText(ch).width);
+    const totalWidth = widths.reduce((a, b) => a + b, 0) + letterSpacing * (label.length - 1);
+    this._brand = { label, fontSize, letterSpacing, widths, totalWidth };
+  },
+
+  // color is an 'r,g,b' triple string; every renderer below passes its own
+  // (electric blue for idle/thinking/speaking, orange for error, green for
+  // success) — the default here only matters if something calls this
+  // directly without one.
+  _drawBrand(ctx, cx, cy, energy, color = '0,212,255') {
+    if (!this._brand) return;
+    const { label, fontSize, letterSpacing, widths, totalWidth } = this._brand;
+    ctx.font = `700 ${fontSize}px 'Orbitron', monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = `rgba(${color},${0.85 + energy * 0.1})`;
+    ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 10;
+    let x = cx - totalWidth / 2;
+    [...label].forEach((ch, i) => {
+      ctx.fillText(ch, x, cy);
+      x += widths[i] + letterSpacing;
+    });
+    ctx.shadowBlur = 0;
+  },
+
+  // ── Shared building blocks used by every state renderer below, so the
+  // Orb's visual identity (glass, rings, glow, wave, sparkles, branding)
+  // stays consistent across idle/thinking/speaking/error/success — only
+  // the energy/color driving them differs per state. ──
+
+  // Strong, soft outer glow (the "40px blur" premium halo).
+  _drawHalo(ctx, cx, cy, R, intensity, color) {
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.65, cx, cy, R * 2.0);
+    halo.addColorStop(0, `rgba(${color},${0.28 * intensity})`);
+    halo.addColorStop(0.5, `rgba(${color},${0.1 * intensity})`);
+    halo.addColorStop(1, `rgba(${color},0)`);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 2.0, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
+  },
+
+  // Two thin neon rings around the body.
+  _drawRings(ctx, cx, cy, R, energy, color) {
+    [R * 1.32, R * 1.12].forEach((rr, i) => {
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${color},${Math.max(0, (0.4 - i * 0.12) * energy)})`;
+      ctx.lineWidth = 1;
+      ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 6;
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+  },
+
+  // Ultra-premium glass body — a dark base layer plus a second, subtler
+  // tinted "shell" layer near the rim for a double-layer 3D glass feel.
+  _drawGlassBody(ctx, cx, cy, R) {
+    const body = ctx.createRadialGradient(cx - R * 0.28, cy - R * 0.32, R * 0.05, cx, cy, R);
+    body.addColorStop(0, 'rgba(22,42,62,0.88)');
+    body.addColorStop(0.4, 'rgba(8,20,36,0.9)');
+    body.addColorStop(0.8, 'rgba(2,8,18,0.95)');
+    body.addColorStop(1, 'rgba(0,3,10,0.97)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = body; ctx.fill();
+
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
+    const shell = ctx.createRadialGradient(cx, cy, R * 0.82, cx, cy, R);
+    shell.addColorStop(0, 'rgba(0,212,255,0)');
+    shell.addColorStop(1, 'rgba(0,212,255,0.09)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = shell; ctx.fill();
+    ctx.restore();
+  },
+
+  // Glass reflection highlight, top-left — a soft sheen plus a small crisp
+  // specular dot for that "photorealistic glass" look.
+  _drawSpecular(ctx, cx, cy, R) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
+    const spec = ctx.createRadialGradient(cx - R * 0.32, cy - R * 0.42, 1, cx - R * 0.32, cy - R * 0.42, R * 0.58);
+    spec.addColorStop(0, 'rgba(255,255,255,0.16)');
+    spec.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+    spec.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = spec; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx - R * 0.38, cy - R * 0.48, R * 0.045, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fill();
+    ctx.restore();
+  },
+
+  // The bright rim stroke itself, with the strong outer-glow blur.
+  _drawRim(ctx, cx, cy, R, brightness, color) {
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${color},${Math.min(1, 0.6 + brightness * 0.3)})`;
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 22 + brightness * 14;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  },
+
+  // Dotted particle wave flowing along the bottom, inside the glass.
+  _drawDottedWave(ctx, cx, cy, R, elapsed, color) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
+    const baseY = cy + R * 0.4;
+    const dotCount = 22;
+    const halfWidth = R * 0.92;
+    for (let i = 0; i < dotCount; i++) {
+      const t = i / (dotCount - 1);
+      const x = cx - halfWidth + t * halfWidth * 2;
+      const dx = (x - cx) / R;
+      const mask = Math.sqrt(Math.max(0, 1 - dx * dx));
+      const y = baseY + Math.sin(x * 0.06 + elapsed / 850) * 5 * mask;
+      const alpha = (0.22 + Math.sin(elapsed / 1300 + i * 0.5) * 0.12) * mask;
+      ctx.beginPath(); ctx.arc(x, y, 1.1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color},${Math.max(0, alpha)})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  },
+
+  // Floating sparkle particles twinkling around (outside) the orb.
+  _drawSparkles(ctx, cx, cy, R, elapsed, color) {
+    if (!this._sparkles) return;
+    this._sparkles.forEach(s => {
+      const twinkle = Math.max(0, Math.sin(elapsed / s.period + s.phase));
+      const alpha = twinkle * s.maxAlpha;
+      if (alpha <= 0.01) return;
+      ctx.beginPath();
+      ctx.arc(cx + s.dx * R, cy + s.dy * R, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color},${alpha})`;
+      ctx.fill();
+    });
+  },
+
+  _drawParticles(ctx, cx, cy, R, elapsed, { speedMult = 1, alphaBase = 0.05, alphaAmp = 0.04, color = '0,212,255' } = {}) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
+    this._particles.forEach(p => {
+      p.angle += p.speed * speedMult;
+      const px = cx + Math.cos(p.angle) * p.radius;
+      const py = cy + Math.sin(p.angle) * p.radius * 0.6;
+      const alpha = Math.max(0, alphaBase + Math.sin(elapsed / 4000 + p.phase) * alphaAmp);
+      ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color},${alpha})`;
+      ctx.fill();
+    });
+    ctx.restore();
+  },
+
+  // ── Phase 1 (static premium glass orb) + Phase 2 (slow idle breathing).
+  // Timing unchanged from before (~9s breathing cycle) — only the visual
+  // drawn each frame is the new premium-glass style. ──
+  _renderIdle(ctx, N, cx, cy, R, elapsed) {
+    const color = '0,212,255';
+    const breathe = Math.sin((elapsed / 9000) * Math.PI * 2); // -1..1
+    const glowPulse = 0.5 + breathe * 0.18;
+    const ringPulse = 0.55 + breathe * 0.25;
+
+    ctx.clearRect(0, 0, N, N);
+    this._drawHalo(ctx, cx, cy, R, glowPulse, color);
+    this._drawRings(ctx, cx, cy, R, ringPulse, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+    this._drawRim(ctx, cx, cy, R, 0.5 + breathe * 0.5, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1, alphaBase: 0.05, alphaAmp: 0.04, color });
+    this._drawBrand(ctx, cx, cy, breathe, color);
+  },
+
+  // ── Phase 3 — thinking: same base glass/rings/glow, but faster/more
+  // energetic, plus a few small energy nodes traveling around the ring
+  // with a short fading trail, each at a slightly different speed —
+  // reads as active, organic "processing" rather than a generic
+  // mechanical loading spinner (deliberately not two uniform rotating
+  // arcs). Callers set this via Orb.setState('thinking') and are
+  // expected to move it on (setState/pulse to 'speaking', 'error', or
+  // 'idle') once the response is ready; the renderer itself has no
+  // auto-timeout. ──
+  _renderThinking(ctx, N, cx, cy, R, elapsed) {
+    const color = '0,212,255';
+    const pulse = Math.sin((elapsed / 1800) * Math.PI * 2); // ~1.8s cycle
+    const glowPulse = 0.7 + pulse * 0.25;
+    const ringPulse = 0.75 + pulse * 0.2;
+
+    ctx.clearRect(0, 0, N, N);
+    this._drawHalo(ctx, cx, cy, R, glowPulse, color);
+    this._drawRings(ctx, cx, cy, R, ringPulse, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+
+    // Traveling energy nodes with fading trails — each moves at its own
+    // speed so they drift in and out of sync, unlike a uniform spinner.
+    const nodeSpeeds = [2200, 2650, 3100, 2900];
+    ctx.shadowColor = `rgb(${color})`;
+    nodeSpeeds.forEach((speed, n) => {
+      const baseAngle = (elapsed / speed) * Math.PI * 2 + (n * Math.PI * 2) / nodeSpeeds.length;
+      for (let t = 0; t < 5; t++) {
+        const angle = baseAngle - t * 0.1;
+        const alpha = (1 - t / 5) * 0.75;
+        const nx = cx + Math.cos(angle) * R * 1.2;
+        const ny = cy + Math.sin(angle) * R * 1.2;
+        ctx.shadowBlur = t === 0 ? 8 : 0;
+        ctx.beginPath();
+        ctx.arc(nx, ny, t === 0 ? 2.1 : 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${color},${alpha})`;
+        ctx.fill();
+      }
+    });
+    ctx.shadowBlur = 0;
+
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+    this._drawRim(ctx, cx, cy, R, 0.6 + pulse * 0.4, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 5, alphaBase: 0.1, alphaAmp: 0.08, color });
+    this._drawBrand(ctx, cx, cy, pulse, color);
+  },
+
+  // ── Phase 4 — speaking: reactive glow/rim/particles driven by an
+  // "energy" value (unchanged formula/timing). If Orb.setAudioLevel() has
+  // been called recently, that real value is used; otherwise (today,
+  // always — no TTS/audio output exists yet) a smooth two-frequency
+  // synthetic envelope stands in. ──
+  _renderSpeaking(ctx, N, cx, cy, R, elapsed) {
+    const color = '0,212,255';
+    const usingRealAudio = (performance.now() - this._audioLevelSetAt) < 400;
+    const rawEnergy = usingRealAudio
+      ? this._audioLevel
+      : 0.5 + Math.sin(elapsed / 420) * 0.28 + Math.sin(elapsed / 233 + 1.1) * 0.14;
+    const e = Math.max(0.15, Math.min(1, rawEnergy));
+
+    ctx.clearRect(0, 0, N, N);
+    this._drawHalo(ctx, cx, cy, R, 0.5 + e * 0.5, color);
+    this._drawRings(ctx, cx, cy, R, 0.55 + e * 0.4, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+    this._drawRim(ctx, cx, cy, R, e, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 2.5, alphaBase: 0.06 + e * 0.05, alphaAmp: 0.05, color });
+    this._drawBrand(ctx, cx, cy, e, color);
+  },
+
+  // ── Phase 5 — error/alert: orange, a couple of gentle decaying pulses
+  // over ~1.4s (unchanged timing). Clearly different, not aggressive.
+  // Driven via Orb.pulse('error', ms). ──
+  _renderError(ctx, N, cx, cy, R, elapsed) {
+    const color = '255,120,70';
+    const sinceState = performance.now() - this._stateChangedAt;
+    const decay = Math.max(0, 1 - sinceState / 1400);
+    const pulse = 0.5 + Math.sin(sinceState / 220) * 0.5 * decay;
+
+    ctx.clearRect(0, 0, N, N);
+    this._drawHalo(ctx, cx, cy, R, 0.4 + decay * 0.5, color);
+    this._drawRings(ctx, cx, cy, R, 0.4 + decay * 0.4, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+    this._drawRim(ctx, cx, cy, R, pulse * decay, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1.5, alphaBase: 0.05, alphaAmp: 0.04, color });
+    this._drawBrand(ctx, cx, cy, pulse * decay, color);
+  },
+
+  // ── Phase 5 — success: green, a single gentle bloom (no oscillation —
+  // calmer than error), decaying over ~1.1s (unchanged timing). Driven
+  // via Orb.pulse('success', ms). ──
+  _renderSuccess(ctx, N, cx, cy, R, elapsed) {
+    const color = '70,220,150';
+    const sinceState = performance.now() - this._stateChangedAt;
+    const bloom = Math.max(0, 1 - sinceState / 1100);
+
+    ctx.clearRect(0, 0, N, N);
+    this._drawHalo(ctx, cx, cy, R, 0.4 + bloom * 0.6, color);
+    this._drawRings(ctx, cx, cy, R, 0.4 + bloom * 0.5, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+    this._drawRim(ctx, cx, cy, R, bloom, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1.2, alphaBase: 0.05 + bloom * 0.04, alphaAmp: 0.04, color });
+    this._drawBrand(ctx, cx, cy, bloom, color);
   },
 };
 
@@ -814,7 +1626,12 @@ const App = {
     document.getElementById('profile-joined').textContent = p.joined;
     const avatarEl = document.getElementById('profile-avatar');
     if (p.photo) {
-      avatarEl.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="">`;
+      avatarEl.textContent = '';
+      const img = document.createElement('img');
+      img.src = p.photo;
+      img.alt = '';
+      img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+      avatarEl.appendChild(img);
     } else {
       avatarEl.textContent = UI.initials(p.name);
     }
@@ -852,6 +1669,27 @@ const App = {
     Orb.init();
   },
 
+  // ── Home starter-action cards (Analyze / Compare / Calculate / Decide) ──
+  // These route into real existing capabilities (Finance category,
+  // Decision Mode, Calculation Cards) — no new backend behavior.
+  quickAction(type) {
+    if (type === 'analyze') { this.startChat('finance'); return; }
+    const examples = {
+      compare: 'Should I choose a savings account or a mutual fund for my emergency fund?',
+      calculate: 'Calculate my EMI for a ₹5,00,000 loan at 9% interest for 3 years.',
+      decide: 'Should I pay off my credit card debt or invest the extra money first?',
+    };
+    const text = examples[type];
+    if (!text) return;
+    this.startChat('finance');
+    setTimeout(() => {
+      const input = document.getElementById('chat-input');
+      input.value = text;
+      UI.autoResize(input);
+      this.sendMessage();
+    }, 120);
+  },
+
   // ── Chat ──
   startChat(category) {
     State.category = category;
@@ -880,7 +1718,7 @@ const App = {
 
     // Guest message limit gate — works whether or not Firebase is configured.
     // Auth can be "disabled" (no Firebase keys yet) but the UI flow must still fire.
-    if (!Auth.isLoggedIn() && State.guestMsgCount >= CONFIG.guestMessageLimit) {
+    if (CONFIG.guestLimitEnabled && !Auth.isLoggedIn() && State.guestMsgCount >= CONFIG.guestMessageLimit) {
       this.openAuth('chat');
       return;
     }
@@ -898,23 +1736,32 @@ const App = {
       State.guestMsgCount++;
       localStorage.setItem('sofia_guest_count', String(State.guestMsgCount));
       UI.updateGuestCounter();
-      justHitLimit = State.guestMsgCount >= CONFIG.guestMessageLimit;
+      justHitLimit = CONFIG.guestLimitEnabled && State.guestMsgCount >= CONFIG.guestMessageLimit;
     }
 
     State.isThinking = true;
     UI.showTyping(); UI.setStatus('Thinking...');
+    Orb.setState('thinking');
 
     try {
-      const reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category);
+      // Decision Mode keeps priority (unchanged behavior) - calculation intent
+      // is only checked when the question isn't already a decision/comparison one.
+      const responseType = DecisionMode.isDecisionQuery(text) ? 'decision'
+                          : CalcMode.isCalculationQuery(text) ? 'calc'
+                          : null;
+      const reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category, responseType);
       UI.removeTyping(); UI.setStatus('Online');
       UI.addMessage('sofia', reply);
       State.history.push({ role: 'assistant', content: reply });
+      Orb.speakThenConfirm(reply.length);
     } catch (err) {
       UI.removeTyping(); UI.setStatus('Online');
-      const msg = err.message.includes('401') ? 'API key issue. Please check Settings. 🔑'
-                : err.message.includes('429') ? 'Too many requests. Please wait a moment. ⏳'
+      const errText = String(err?.message || '');
+      const msg = errText.includes('401') ? 'API key issue. Please check Settings. 🔑'
+                : errText.includes('429') ? 'Too many requests. Please wait a moment. ⏳'
                 : 'Connection issue. Please try again. 😔';
       UI.addMessage('sofia', msg);
+      Orb.pulse('error', 1500);
     } finally {
       State.isThinking = false;
       // Immediately after the 2nd guest message's reply, show the login wall —
