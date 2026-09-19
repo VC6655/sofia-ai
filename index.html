@@ -1096,23 +1096,70 @@ const CalcUI = {
    ORB ANIMATION
 ═══════════════════════════════════════ */
 const Orb = {
-  // Clean state-based structure so later phases can slot in without
-  // touching this file's call sites (Orb.init() stays the only entry
-  // point). Only 'idle' (Phase 1 static + Phase 2 breathing) is
-  // implemented. Any other state currently falls back to the idle
-  // renderer, so calling setState() early can never break anything.
-  //   idle     — Phase 1 + 2 (implemented here)
-  //   thinking — Phase 3, not implemented yet
-  //   speaking — Phase 4, not implemented yet
-  //   emotion  — Phase 5, not implemented yet
+  // Clean state-based structure — Orb.init() stays the only mount point;
+  // any code anywhere can drive the visual purely via setState()/pulse().
+  //   idle     — Phase 1 (static premium orb) + Phase 2 (idle breathing)
+  //   thinking — Phase 3 (rotating rings, active particles)
+  //   speaking — Phase 4 (reactive glow, fallback envelope — see
+  //              setAudioLevel() for the future real-audio hook)
+  //   error    — Phase 5 (alert — orange, calm, not aggressive)
+  //   success  — Phase 5 (positive/highlighted — green, gentle bloom)
+  // error/success are transient: drive them with pulse(), which
+  // auto-reverts to idle unless a newer state has since superseded it.
   state: 'idle',
   _canvas: null,
   _particles: null,
   _brand: null,
   _startTime: 0,
+  _stateChangedAt: 0,
+  _stateToken: 0,
+  // Fallback speaking envelope — see setAudioLevel().
+  _audioLevel: 0,
+  _audioLevelSetAt: 0,
 
+  // Switches the Orb's visual state immediately. Returns a token that a
+  // caller can hold onto (see pulse()) to detect whether this state has
+  // since been superseded by a later call.
   setState(state) {
     this.state = state;
+    this._stateChangedAt = performance.now();
+    this._stateToken++;
+    return this._stateToken;
+  },
+
+  // Sets a transient state (e.g. 'error', 'success') that automatically
+  // reverts to 'idle' after durationMs — unless a newer setState()/pulse()
+  // call has already moved the Orb on, in which case this stale timer is a
+  // safe no-op (guarded by the state token) instead of clobbering it.
+  pulse(state, durationMs) {
+    const token = this.setState(state);
+    setTimeout(() => {
+      if (this._stateToken === token) this.setState('idle');
+    }, durationMs);
+    return token;
+  },
+
+  // Future real-audio hook for Phase 4: if something ever feeds real
+  // playback amplitude here (0..1) while state === 'speaking', the
+  // renderer uses it directly. Nothing calls this today — no TTS/audio
+  // output exists in SOFIA yet (voice input is speech-to-text only, via
+  // SpeechRecognition, which exposes no amplitude data) — so 'speaking'
+  // always falls back to a clean synthetic envelope until this is wired
+  // to something real.
+  setAudioLevel(level) {
+    this._audioLevel = Math.max(0, Math.min(1, level));
+    this._audioLevelSetAt = performance.now();
+  },
+
+  // Convenience for the chat flow: shows 'speaking' for a duration scaled
+  // to the reply length, then a brief 'success' confirmation, then back to
+  // idle. Token-guarded so a fast follow-up message safely supersedes it.
+  speakThenConfirm(replyLength) {
+    const token = this.setState('speaking');
+    const speakMs = Math.min(4000, 1200 + (replyLength || 0) * 6);
+    setTimeout(() => {
+      if (this._stateToken === token) this.pulse('success', 700);
+    }, speakMs);
   },
 
   init() {
@@ -1151,9 +1198,10 @@ const Orb = {
     const draw = (now) => {
       const elapsed = now - this._startTime;
       switch (this.state) {
-        case 'thinking': // Phase 3 — not implemented yet
-        case 'speaking': // Phase 4 — not implemented yet
-        case 'emotion':  // Phase 5 — not implemented yet
+        case 'thinking': this._renderThinking(ctx, N, cx, cy, R, elapsed); break;
+        case 'speaking': this._renderSpeaking(ctx, N, cx, cy, R, elapsed); break;
+        case 'error':    this._renderError(ctx, N, cx, cy, R, elapsed); break;
+        case 'success':  this._renderSuccess(ctx, N, cx, cy, R, elapsed); break;
         case 'idle':
         default:
           this._renderIdle(ctx, N, cx, cy, R, elapsed);
@@ -1239,19 +1287,231 @@ const Orb = {
     this._drawBrand(ctx, cx, cy, breathe);
   },
 
-  _drawBrand(ctx, cx, cy, breathe) {
+  // color is an 'r,g,b' triple string; defaults to the Phase 1/2 cyan so
+  // every existing (idle) call site is unaffected.
+  _drawBrand(ctx, cx, cy, energy, color = '0,229,255') {
     if (!this._brand) return;
     const { label, fontSize, letterSpacing, widths, totalWidth } = this._brand;
     ctx.font = `900 ${fontSize}px 'Orbitron', monospace`;
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = `rgba(0,229,255,${0.85 + breathe * 0.1})`;
-    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 8;
+    ctx.fillStyle = `rgba(${color},${0.85 + energy * 0.1})`;
+    ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 8;
     let x = cx - totalWidth / 2;
     [...label].forEach((ch, i) => {
       ctx.fillText(ch, x, cy);
       x += widths[i] + letterSpacing;
     });
     ctx.shadowBlur = 0;
+  },
+
+  // ── Shared building blocks reused by the Phase 3-5 renderers below.
+  // _renderIdle above keeps its own inline copies untouched on purpose,
+  // so Phase 1/2's approved look and animation can never be affected by
+  // this refactor. ──
+  _drawGlassBody(ctx, cx, cy, R) {
+    const body = ctx.createRadialGradient(cx - R * 0.28, cy - R * 0.32, R * 0.05, cx, cy, R);
+    body.addColorStop(0, 'rgba(20,40,60,0.9)');
+    body.addColorStop(0.4, 'rgba(6,18,32,0.92)');
+    body.addColorStop(0.8, 'rgba(2,8,18,0.96)');
+    body.addColorStop(1, 'rgba(0,2,8,0.98)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = body; ctx.fill();
+  },
+
+  _drawSpecular(ctx, cx, cy, R) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
+    const spec = ctx.createRadialGradient(cx - R * 0.32, cy - R * 0.4, 1, cx - R * 0.32, cy - R * 0.4, R * 0.55);
+    spec.addColorStop(0, 'rgba(255,255,255,0.10)');
+    spec.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = spec; ctx.fill();
+    ctx.restore();
+  },
+
+  _drawParticles(ctx, cx, cy, R, elapsed, { speedMult = 1, alphaBase = 0.05, alphaAmp = 0.04, color = '0,229,255' } = {}) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
+    this._particles.forEach(p => {
+      p.angle += p.speed * speedMult;
+      const px = cx + Math.cos(p.angle) * p.radius;
+      const py = cy + Math.sin(p.angle) * p.radius * 0.6;
+      const alpha = Math.max(0, alphaBase + Math.sin(elapsed / 4000 + p.phase) * alphaAmp);
+      ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color},${alpha})`;
+      ctx.fill();
+    });
+    ctx.restore();
+  },
+
+  // ── Phase 3 — thinking: same clean geometry as idle, but faster/more
+  // energetic, plus two smoothly rotating arcs (~2.6s/revolution) on the
+  // outer ring — the "actively processing" signature motion. Callers set
+  // this via Orb.setState('thinking') and are expected to move it on
+  // (setState/pulse to 'speaking', 'error', or 'idle') once the response
+  // is ready; the renderer itself has no auto-timeout. ──
+  _renderThinking(ctx, N, cx, cy, R, elapsed) {
+    const color = '0,229,255';
+    const pulse = Math.sin((elapsed / 1800) * Math.PI * 2); // ~1.8s cycle
+    const glowPulse = 0.62 + pulse * 0.22;
+    const ringPulse = 0.62 + pulse * 0.18;
+
+    ctx.clearRect(0, 0, N, N);
+
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.7);
+    halo.addColorStop(0, `rgba(${color},${0.22 * glowPulse})`);
+    halo.addColorStop(1, `rgba(${color},0)`);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.7, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
+
+    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${color},${(0.06 - i * 0.014) * ringPulse})`;
+      ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    // Two smoothly rotating arcs — the "thinking" signature motion.
+    const rotAngle = (elapsed / 2600) * Math.PI * 2;
+    const arcSpan = Math.PI / 3.4;
+    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 8;
+    [0, Math.PI].forEach(offset => {
+      const start = rotAngle + offset;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * 1.24, start, start + arcSpan);
+      ctx.strokeStyle = `rgba(${color},0.75)`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${color},${0.62 + pulse * 0.18})`;
+    ctx.lineWidth = 1.6;
+    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 14 + pulse * 6;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    // More active particles than idle, still contained and premium.
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 5, alphaBase: 0.1, alphaAmp: 0.08, color });
+
+    this._drawBrand(ctx, cx, cy, pulse, color);
+  },
+
+  // ── Phase 4 — speaking: reactive glow/rim/particles driven by an
+  // "energy" value. If Orb.setAudioLevel() has been called recently, that
+  // real value is used; otherwise (today, always — no TTS/audio output
+  // exists yet) a smooth two-frequency synthetic envelope stands in, so
+  // the Orb still feels responsive without pretending to read real audio
+  // it doesn't have. ──
+  _renderSpeaking(ctx, N, cx, cy, R, elapsed) {
+    const color = '0,229,255';
+    const usingRealAudio = (performance.now() - this._audioLevelSetAt) < 400;
+    const rawEnergy = usingRealAudio
+      ? this._audioLevel
+      : 0.5 + Math.sin(elapsed / 420) * 0.28 + Math.sin(elapsed / 233 + 1.1) * 0.14;
+    const e = Math.max(0.15, Math.min(1, rawEnergy));
+
+    ctx.clearRect(0, 0, N, N);
+
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.6);
+    halo.addColorStop(0, `rgba(${color},${0.14 + e * 0.14})`);
+    halo.addColorStop(1, `rgba(${color},0)`);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.6, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
+
+    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${color},${(0.045 + e * 0.05) - i * 0.012})`;
+      ctx.lineWidth = i === 0 ? 1 + e * 0.6 : 1;
+      ctx.stroke();
+    });
+
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${color},${0.55 + e * 0.28})`;
+    ctx.lineWidth = 1.4 + e * 0.8;
+    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 10 + e * 10;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 2.5, alphaBase: 0.06 + e * 0.05, alphaAmp: 0.05, color });
+
+    this._drawBrand(ctx, cx, cy, e, color);
+  },
+
+  // ── Phase 5 — error/alert: orange, a couple of gentle decaying pulses
+  // over ~1.4s. Clearly different from idle/thinking/speaking, but no
+  // rapid flashing. Meant to be driven via Orb.pulse('error', ms). ──
+  _renderError(ctx, N, cx, cy, R, elapsed) {
+    const color = '255,120,70';
+    const sinceState = performance.now() - this._stateChangedAt;
+    const decay = Math.max(0, 1 - sinceState / 1400);
+    const pulse = 0.5 + Math.sin(sinceState / 220) * 0.5 * decay;
+
+    ctx.clearRect(0, 0, N, N);
+
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.6);
+    halo.addColorStop(0, `rgba(${color},${0.1 + 0.18 * decay})`);
+    halo.addColorStop(1, `rgba(${color},0)`);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.6, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
+
+    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${color},${(0.05 - i * 0.012) * (0.5 + decay * 0.5)})`;
+      ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${color},${0.5 + pulse * 0.25})`;
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = 'rgb(255,120,70)'; ctx.shadowBlur = 8 + pulse * 8 * decay;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1.5, alphaBase: 0.05, alphaAmp: 0.04, color });
+
+    this._drawBrand(ctx, cx, cy, pulse * decay, color);
+  },
+
+  // ── Phase 5 — success: green, a single gentle bloom (no oscillation —
+  // calmer than error), decaying over ~1.1s. Meant to be driven via
+  // Orb.pulse('success', ms). ──
+  _renderSuccess(ctx, N, cx, cy, R, elapsed) {
+    const color = '70,220,150';
+    const sinceState = performance.now() - this._stateChangedAt;
+    const bloom = Math.max(0, 1 - sinceState / 1100);
+
+    ctx.clearRect(0, 0, N, N);
+
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.7);
+    halo.addColorStop(0, `rgba(${color},${0.1 + 0.2 * bloom})`);
+    halo.addColorStop(1, `rgba(${color},0)`);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.7, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
+
+    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${color},${(0.05 - i * 0.012) * (0.5 + bloom * 0.5)})`;
+      ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${color},${0.55 + bloom * 0.25})`;
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = 'rgb(70,220,150)'; ctx.shadowBlur = 8 + bloom * 10;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1.2, alphaBase: 0.05 + bloom * 0.04, alphaAmp: 0.04, color });
+
+    this._drawBrand(ctx, cx, cy, bloom, color);
   },
 };
 
@@ -1464,6 +1724,7 @@ const App = {
 
     State.isThinking = true;
     UI.showTyping(); UI.setStatus('Thinking...');
+    Orb.setState('thinking');
 
     try {
       // Decision Mode keeps priority (unchanged behavior) - calculation intent
@@ -1475,6 +1736,7 @@ const App = {
       UI.removeTyping(); UI.setStatus('Online');
       UI.addMessage('sofia', reply);
       State.history.push({ role: 'assistant', content: reply });
+      Orb.speakThenConfirm(reply.length);
     } catch (err) {
       UI.removeTyping(); UI.setStatus('Online');
       const errText = String(err?.message || '');
@@ -1482,6 +1744,7 @@ const App = {
                 : errText.includes('429') ? 'Too many requests. Please wait a moment. ⏳'
                 : 'Connection issue. Please try again. 😔';
       UI.addMessage('sofia', msg);
+      Orb.pulse('error', 1500);
     } finally {
       State.isThinking = false;
       // Immediately after the 2nd guest message's reply, show the login wall —
