@@ -1096,6 +1096,25 @@ const CalcUI = {
    ORB ANIMATION
 ═══════════════════════════════════════ */
 const Orb = {
+  // Clean state-based structure so later phases can slot in without
+  // touching this file's call sites (Orb.init() stays the only entry
+  // point). Only 'idle' (Phase 1 static + Phase 2 breathing) is
+  // implemented. Any other state currently falls back to the idle
+  // renderer, so calling setState() early can never break anything.
+  //   idle     — Phase 1 + 2 (implemented here)
+  //   thinking — Phase 3, not implemented yet
+  //   speaking — Phase 4, not implemented yet
+  //   emotion  — Phase 5, not implemented yet
+  state: 'idle',
+  _canvas: null,
+  _particles: null,
+  _brand: null,
+  _startTime: 0,
+
+  setState(state) {
+    this.state = state;
+  },
+
   init() {
     if (State.orbRaf) cancelAnimationFrame(State.orbRaf);
     const canvas = document.getElementById('orb-canvas');
@@ -1107,38 +1126,132 @@ const Orb = {
     canvas.width = SIZE * dpr; canvas.height = SIZE * dpr;
     canvas.style.width = SIZE + 'px'; canvas.style.height = SIZE + 'px';
     ctx.scale(dpr, dpr);
-    const N = SIZE, cx = N/2, cy = N/2, R = N*0.32;
-    const particleCount = isMobile ? 32 : 52;
-    let t = 0;
-    const particles = Array.from({length:particleCount},(_,i)=>({
-      angle:(i/particleCount)*Math.PI*2, radius:R*0.85+Math.random()*R*0.65,
-      speed:0.0018+Math.random()*0.003, size:0.6+Math.random()*1.2, phase:Math.random()*Math.PI*2,
+    this._canvas = canvas;
+
+    const N = SIZE, cx = N / 2, cy = N / 2, R = N * 0.32;
+    // Extremely subtle, slow drift — a handful of particles, not a swarm.
+    const particleCount = isMobile ? 9 : 14;
+    this._particles = Array.from({ length: particleCount }, (_, i) => ({
+      angle: (i / particleCount) * Math.PI * 2,
+      radius: R * 0.75 + Math.random() * R * 0.32,
+      speed: 0.00006 + Math.random() * 0.00007,
+      size: 0.6 + Math.random() * 0.9,
+      phase: Math.random() * Math.PI * 2,
     }));
-    const draw = () => {
-      ctx.clearRect(0,0,N,N);
-      [R+50,R+32,R+17].forEach((rr,i)=>{ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.strokeStyle=`rgba(0,229,255,${.035-i*.01})`;ctx.lineWidth=1;ctx.stroke();});
-      const g = ctx.createRadialGradient(cx-R*.25,cy-R*.2,R*.04,cx,cy,R);
-      g.addColorStop(0,'rgba(0,229,255,.18)');g.addColorStop(.35,'rgba(0,140,210,.12)');
-      g.addColorStop(.75,'rgba(0,40,90,.2)');g.addColorStop(1,'rgba(0,8,25,.04)');
-      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
-      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(0,229,255,${.68+Math.sin(t*.025)*.14})`;
-      ctx.lineWidth=1.6;ctx.shadowColor='#00e5ff';ctx.shadowBlur=14;ctx.stroke();ctx.shadowBlur=0;
-      ctx.save();ctx.beginPath();ctx.arc(cx,cy,R-2,0,Math.PI*2);ctx.clip();
-      [{dy:-16,amp:26,freq:.018,phase:0,alpha:.62},{dy:0,amp:18,freq:.022,phase:1.4,alpha:.42},{dy:16,amp:12,freq:.016,phase:2.8,alpha:.26}].forEach(({dy,amp,freq,phase,alpha})=>{
-        ctx.beginPath();
-        for(let x=cx-R;x<=cx+R;x+=2){const dx=(x-cx)/R,mask=Math.sqrt(Math.max(0,1-dx*dx));const y=cy+dy+Math.sin(x*freq+t*.038+phase)*amp*mask;x===Math.ceil(cx-R)?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-        ctx.strokeStyle=`rgba(0,229,255,${alpha})`;ctx.lineWidth=1.4;ctx.shadowColor='#00e5ff';ctx.shadowBlur=5;ctx.stroke();
-      });
-      ctx.restore();ctx.shadowBlur=0;
-      particles.forEach(p=>{p.angle+=p.speed;const px=cx+Math.cos(p.angle)*p.radius,py=cy+Math.sin(p.angle)*p.radius*.55;const al=Math.max(0,.08+Math.sin(t*.032+p.phase)*.18);ctx.beginPath();ctx.arc(px,py,p.size,0,Math.PI*2);ctx.fillStyle=`rgba(0,229,255,${al})`;ctx.fill();});
-      const beam=ctx.createLinearGradient(cx,cy+R,cx,N*.87);
-      beam.addColorStop(0,`rgba(0,229,255,${.28+Math.sin(t*.03)*.08})`);beam.addColorStop(1,'rgba(0,229,255,0)');
-      ctx.beginPath();ctx.moveTo(cx-2,cy+R);ctx.lineTo(cx+2,cy+R);ctx.lineTo(cx+18,N*.87);ctx.lineTo(cx-18,N*.87);ctx.closePath();ctx.fillStyle=beam;ctx.fill();
-      [[62,10],[42,6.5],[24,4]].forEach(([rx,ry],i)=>{ctx.beginPath();ctx.ellipse(cx,N*.87,rx,ry,0,0,Math.PI*2);ctx.strokeStyle=`rgba(0,229,255,${.26-i*.07})`;ctx.lineWidth=.9;ctx.stroke();});
-      t++; State.orbRaf = requestAnimationFrame(draw);
+    this._computeBrandLayout(ctx, R);
+    // Orbitron may still be downloading on first paint; re-measure once
+    // web fonts are ready so the branding stays correctly centered.
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (this._canvas === canvas) this._computeBrandLayout(ctx, R);
+      }).catch(() => {});
+    }
+    this._startTime = performance.now();
+
+    const draw = (now) => {
+      const elapsed = now - this._startTime;
+      switch (this.state) {
+        case 'thinking': // Phase 3 — not implemented yet
+        case 'speaking': // Phase 4 — not implemented yet
+        case 'emotion':  // Phase 5 — not implemented yet
+        case 'idle':
+        default:
+          this._renderIdle(ctx, N, cx, cy, R, elapsed);
+      }
+      State.orbRaf = requestAnimationFrame(draw);
     };
-    draw();
+    State.orbRaf = requestAnimationFrame(draw);
+  },
+
+  _computeBrandLayout(ctx, R) {
+    const label = 'SOFIA';
+    const fontSize = Math.round(R * 0.22);
+    ctx.font = `900 ${fontSize}px 'Orbitron', monospace`;
+    const letterSpacing = fontSize * 0.32;
+    const widths = [...label].map(ch => ctx.measureText(ch).width);
+    const totalWidth = widths.reduce((a, b) => a + b, 0) + letterSpacing * (label.length - 1);
+    this._brand = { label, fontSize, letterSpacing, widths, totalWidth };
+  },
+
+  // ── Phase 1 (static premium glass orb) + Phase 2 (slow idle breathing) ──
+  _renderIdle(ctx, N, cx, cy, R, elapsed) {
+    // One calm ~9s breathing cycle drives glow/ring/particle intensity;
+    // everything else is fixed, clean geometry — no clutter, no flashing.
+    const breathe = Math.sin((elapsed / 9000) * Math.PI * 2); // -1..1
+    const glowPulse = 0.5 + breathe * 0.18;
+    const ringPulse = 0.5 + breathe * 0.12;
+
+    ctx.clearRect(0, 0, N, N);
+
+    // Outer soft halo (breathing glow)
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.65);
+    halo.addColorStop(0, `rgba(0,229,255,${0.16 * glowPulse})`);
+    halo.addColorStop(1, 'rgba(0,229,255,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.65, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
+
+    // Clean multi-layer rings
+    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0,229,255,${(0.05 - i * 0.014) * ringPulse})`;
+      ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    // Dark glass body — layered radial gradient for depth
+    const body = ctx.createRadialGradient(cx - R * 0.28, cy - R * 0.32, R * 0.05, cx, cy, R);
+    body.addColorStop(0, 'rgba(20,40,60,0.9)');
+    body.addColorStop(0.4, 'rgba(6,18,32,0.92)');
+    body.addColorStop(0.8, 'rgba(2,8,18,0.96)');
+    body.addColorStop(1, 'rgba(0,2,8,0.98)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = body; ctx.fill();
+
+    // Subtle glass specular highlight (static depth cue)
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
+    const spec = ctx.createRadialGradient(cx - R * 0.32, cy - R * 0.4, 1, cx - R * 0.32, cy - R * 0.4, R * 0.55);
+    spec.addColorStop(0, 'rgba(255,255,255,0.10)');
+    spec.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = spec; ctx.fill();
+    ctx.restore();
+
+    // Rim glow (breathing)
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(0,229,255,${0.55 + breathe * 0.12})`;
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 10 + breathe * 4;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    // Extremely subtle drifting particles, clipped inside the orb
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
+    this._particles.forEach(p => {
+      p.angle += p.speed;
+      const px = cx + Math.cos(p.angle) * p.radius;
+      const py = cy + Math.sin(p.angle) * p.radius * 0.6;
+      const alpha = Math.max(0, 0.05 + Math.sin(elapsed / 4000 + p.phase) * 0.04);
+      ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,229,255,${alpha})`;
+      ctx.fill();
+    });
+    ctx.restore();
+
+    this._drawBrand(ctx, cx, cy, breathe);
+  },
+
+  _drawBrand(ctx, cx, cy, breathe) {
+    if (!this._brand) return;
+    const { label, fontSize, letterSpacing, widths, totalWidth } = this._brand;
+    ctx.font = `900 ${fontSize}px 'Orbitron', monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = `rgba(0,229,255,${0.85 + breathe * 0.1})`;
+    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 8;
+    let x = cx - totalWidth / 2;
+    [...label].forEach((ch, i) => {
+      ctx.fillText(ch, x, cy);
+      x += widths[i] + letterSpacing;
+    });
+    ctx.shadowBlur = 0;
   },
 };
 
