@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--cyan:#00e5ff;--cyan-border:rgba(0,229,255,.2);--bg:#00000a;--surface:rgba(255,255,255,.04);--text-dim:rgba(255,255,255,.45);--radius:14px;--radius-lg:18px;--safe-b:env(safe-area-inset-bottom,0px);}
@@ -641,6 +642,107 @@ const Auth = {
     // to the user as-is.
     if (!err || !err.code) return 'Sign-in is temporarily unavailable. Please check your connection (or disable any ad blocker) and try again.';
     return map[err.code] || err.message || 'Something went wrong. Please try again.';
+  },
+};
+
+/* ═══════════════════════════════════════
+   PERSISTENCE — Firestore wrapper (foundation only).
+   Reuses the single firebase app already initialized by
+   Auth.init() — does not create a second app instance.
+   Not called from anywhere yet: wiring into sendMessage,
+   startChat, clearChat, login restore, and logout is a
+   separate follow-up step. Every method fails safe (logs
+   and returns null) so a Firestore outage can never break
+   chat, auth, or any existing feature.
+═══════════════════════════════════════ */
+const Persistence = {
+  _db: null,
+
+  // Persistence only ever activates for a signed-in user with Firebase
+  // configured — guests and BYOK-only users never touch Firestore.
+  isAvailable() {
+    return Auth.isConfigured() && Auth.isLoggedIn() && typeof firebase !== 'undefined' && !!firebase.firestore;
+  },
+
+  _getDb() {
+    if (!this._db) this._db = firebase.firestore();
+    return this._db;
+  },
+
+  // Creates users/{uid}/sessions/{sessionId} and points
+  // users/{uid}.activeSessionId at it. Returns the new sessionId, or null
+  // on any failure.
+  async startSession(uid, category) {
+    if (!this.isAvailable() || !uid) return null;
+    try {
+      const db = this._getDb();
+      const userRef = db.collection('users').doc(uid);
+      const sessionRef = userRef.collection('sessions').doc();
+      const now = firebase.firestore.FieldValue.serverTimestamp();
+      await sessionRef.set({
+        category,
+        createdAt: now,
+        updatedAt: now,
+        schemaVersion: 1,
+      });
+      await userRef.set({ activeSessionId: sessionRef.id, updatedAt: now }, { merge: true });
+      return sessionRef.id;
+    } catch (e) {
+      console.warn('Persistence.startSession failed:', e);
+      return null;
+    }
+  },
+
+  // Appends one message (role/content — the exact same shape already used
+  // by State.history, including any embedded decision-card/calc-card fenced
+  // block) to users/{uid}/sessions/{sessionId}/messages. Returns the new
+  // messageId, or null on any failure.
+  async appendMessage(uid, sessionId, message) {
+    if (!this.isAvailable() || !uid || !sessionId || !message) return null;
+    try {
+      const db = this._getDb();
+      const sessionRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+      const now = firebase.firestore.FieldValue.serverTimestamp();
+      const messageRef = sessionRef.collection('messages').doc();
+      await messageRef.set({
+        role: message.role,
+        content: message.content,
+        createdAt: now,
+        order: Date.now(),
+      });
+      await sessionRef.set({ updatedAt: now }, { merge: true });
+      return messageRef.id;
+    } catch (e) {
+      console.warn('Persistence.appendMessage failed:', e);
+      return null;
+    }
+  },
+
+  // Reads users/{uid}.activeSessionId and returns that session's category
+  // plus its messages in order, or null if there is none / on any failure.
+  async loadActiveSession(uid) {
+    if (!this.isAvailable() || !uid) return null;
+    try {
+      const db = this._getDb();
+      const userDoc = await db.collection('users').doc(uid).get();
+      const activeSessionId = userDoc.exists ? userDoc.data().activeSessionId : null;
+      if (!activeSessionId) return null;
+      const sessionRef = db.collection('users').doc(uid).collection('sessions').doc(activeSessionId);
+      const sessionDoc = await sessionRef.get();
+      if (!sessionDoc.exists) return null;
+      const messagesSnap = await sessionRef.collection('messages').orderBy('order', 'asc').get();
+      const messages = messagesSnap.docs.map(d => ({ role: d.data().role, content: d.data().content }));
+      return { sessionId: activeSessionId, category: sessionDoc.data().category, messages };
+    } catch (e) {
+      console.warn('Persistence.loadActiveSession failed:', e);
+      return null;
+    }
+  },
+
+  // Resets any locally cached handle/pointer. Called on logout so a
+  // subsequent guest or different-account session starts clean.
+  clearLocalPointers() {
+    this._db = null;
   },
 };
 
