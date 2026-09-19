@@ -1109,6 +1109,7 @@ const Orb = {
   state: 'idle',
   _canvas: null,
   _particles: null,
+  _sparkles: null,
   _brand: null,
   _startTime: 0,
   _stateChangedAt: 0,
@@ -1169,7 +1170,7 @@ const Orb = {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const isMobile = window.innerWidth < 600;
-    const SIZE = isMobile ? 280 : 340;
+    const SIZE = isMobile ? 300 : 400;
     canvas.width = SIZE * dpr; canvas.height = SIZE * dpr;
     canvas.style.width = SIZE + 'px'; canvas.style.height = SIZE + 'px';
     ctx.scale(dpr, dpr);
@@ -1185,6 +1186,20 @@ const Orb = {
       size: 0.6 + Math.random() * 0.9,
       phase: Math.random() * Math.PI * 2,
     }));
+    // Floating sparkles in the glow field just outside the rim.
+    const sparkleCount = isMobile ? 6 : 10;
+    this._sparkles = Array.from({ length: sparkleCount }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 1.05 + Math.random() * 0.45;
+      return {
+        dx: Math.cos(angle) * dist,
+        dy: Math.sin(angle) * dist,
+        size: 0.7 + Math.random() * 1.1,
+        period: 1800 + Math.random() * 1800,
+        phase: Math.random() * Math.PI * 2,
+        maxAlpha: 0.35 + Math.random() * 0.35,
+      };
+    });
     this._computeBrandLayout(ctx, R);
     // Orbitron may still be downloading on first paint; re-measure once
     // web fonts are ready so the branding stays correctly centered.
@@ -1214,88 +1229,24 @@ const Orb = {
   _computeBrandLayout(ctx, R) {
     const label = 'SOFIA';
     const fontSize = Math.round(R * 0.22);
-    ctx.font = `900 ${fontSize}px 'Orbitron', monospace`;
-    const letterSpacing = fontSize * 0.32;
+    ctx.font = `700 ${fontSize}px 'Orbitron', monospace`;
+    const letterSpacing = fontSize * 0.2; // 0.2em, per the premium-orb spec
     const widths = [...label].map(ch => ctx.measureText(ch).width);
     const totalWidth = widths.reduce((a, b) => a + b, 0) + letterSpacing * (label.length - 1);
     this._brand = { label, fontSize, letterSpacing, widths, totalWidth };
   },
 
-  // ── Phase 1 (static premium glass orb) + Phase 2 (slow idle breathing) ──
-  _renderIdle(ctx, N, cx, cy, R, elapsed) {
-    // One calm ~9s breathing cycle drives glow/ring/particle intensity;
-    // everything else is fixed, clean geometry — no clutter, no flashing.
-    const breathe = Math.sin((elapsed / 9000) * Math.PI * 2); // -1..1
-    const glowPulse = 0.5 + breathe * 0.18;
-    const ringPulse = 0.5 + breathe * 0.12;
-
-    ctx.clearRect(0, 0, N, N);
-
-    // Outer soft halo (breathing glow)
-    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.65);
-    halo.addColorStop(0, `rgba(0,229,255,${0.16 * glowPulse})`);
-    halo.addColorStop(1, 'rgba(0,229,255,0)');
-    ctx.beginPath(); ctx.arc(cx, cy, R * 1.65, 0, Math.PI * 2);
-    ctx.fillStyle = halo; ctx.fill();
-
-    // Clean multi-layer rings
-    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(0,229,255,${(0.05 - i * 0.014) * ringPulse})`;
-      ctx.lineWidth = 1; ctx.stroke();
-    });
-
-    // Dark glass body — layered radial gradient for depth
-    const body = ctx.createRadialGradient(cx - R * 0.28, cy - R * 0.32, R * 0.05, cx, cy, R);
-    body.addColorStop(0, 'rgba(20,40,60,0.9)');
-    body.addColorStop(0.4, 'rgba(6,18,32,0.92)');
-    body.addColorStop(0.8, 'rgba(2,8,18,0.96)');
-    body.addColorStop(1, 'rgba(0,2,8,0.98)');
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = body; ctx.fill();
-
-    // Subtle glass specular highlight (static depth cue)
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
-    const spec = ctx.createRadialGradient(cx - R * 0.32, cy - R * 0.4, 1, cx - R * 0.32, cy - R * 0.4, R * 0.55);
-    spec.addColorStop(0, 'rgba(255,255,255,0.10)');
-    spec.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = spec; ctx.fill();
-    ctx.restore();
-
-    // Rim glow (breathing)
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(0,229,255,${0.55 + breathe * 0.12})`;
-    ctx.lineWidth = 1.4;
-    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 10 + breathe * 4;
-    ctx.stroke(); ctx.shadowBlur = 0;
-
-    // Extremely subtle drifting particles, clipped inside the orb
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
-    this._particles.forEach(p => {
-      p.angle += p.speed;
-      const px = cx + Math.cos(p.angle) * p.radius;
-      const py = cy + Math.sin(p.angle) * p.radius * 0.6;
-      const alpha = Math.max(0, 0.05 + Math.sin(elapsed / 4000 + p.phase) * 0.04);
-      ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0,229,255,${alpha})`;
-      ctx.fill();
-    });
-    ctx.restore();
-
-    this._drawBrand(ctx, cx, cy, breathe);
-  },
-
-  // color is an 'r,g,b' triple string; defaults to the Phase 1/2 cyan so
-  // every existing (idle) call site is unaffected.
-  _drawBrand(ctx, cx, cy, energy, color = '0,229,255') {
+  // color is an 'r,g,b' triple string; every renderer below passes its own
+  // (electric blue for idle/thinking/speaking, orange for error, green for
+  // success) — the default here only matters if something calls this
+  // directly without one.
+  _drawBrand(ctx, cx, cy, energy, color = '0,212,255') {
     if (!this._brand) return;
     const { label, fontSize, letterSpacing, widths, totalWidth } = this._brand;
-    ctx.font = `900 ${fontSize}px 'Orbitron', monospace`;
+    ctx.font = `700 ${fontSize}px 'Orbitron', monospace`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = `rgba(${color},${0.85 + energy * 0.1})`;
-    ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 8;
+    ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 10;
     let x = cx - totalWidth / 2;
     [...label].forEach((ch, i) => {
       ctx.fillText(ch, x, cy);
@@ -1304,31 +1255,116 @@ const Orb = {
     ctx.shadowBlur = 0;
   },
 
-  // ── Shared building blocks reused by the Phase 3-5 renderers below.
-  // _renderIdle above keeps its own inline copies untouched on purpose,
-  // so Phase 1/2's approved look and animation can never be affected by
-  // this refactor. ──
-  _drawGlassBody(ctx, cx, cy, R) {
-    const body = ctx.createRadialGradient(cx - R * 0.28, cy - R * 0.32, R * 0.05, cx, cy, R);
-    body.addColorStop(0, 'rgba(20,40,60,0.9)');
-    body.addColorStop(0.4, 'rgba(6,18,32,0.92)');
-    body.addColorStop(0.8, 'rgba(2,8,18,0.96)');
-    body.addColorStop(1, 'rgba(0,2,8,0.98)');
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = body; ctx.fill();
+  // ── Shared building blocks used by every state renderer below, so the
+  // Orb's visual identity (glass, rings, glow, wave, sparkles, branding)
+  // stays consistent across idle/thinking/speaking/error/success — only
+  // the energy/color driving them differs per state. ──
+
+  // Strong, soft outer glow (the "40px blur" premium halo).
+  _drawHalo(ctx, cx, cy, R, intensity, color) {
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.65, cx, cy, R * 2.0);
+    halo.addColorStop(0, `rgba(${color},${0.28 * intensity})`);
+    halo.addColorStop(0.5, `rgba(${color},${0.1 * intensity})`);
+    halo.addColorStop(1, `rgba(${color},0)`);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 2.0, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
   },
 
-  _drawSpecular(ctx, cx, cy, R) {
+  // Two thin neon rings around the body.
+  _drawRings(ctx, cx, cy, R, energy, color) {
+    [R * 1.32, R * 1.12].forEach((rr, i) => {
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${color},${Math.max(0, (0.4 - i * 0.12) * energy)})`;
+      ctx.lineWidth = 1;
+      ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 6;
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+  },
+
+  // Ultra-premium glass body — a dark base layer plus a second, subtler
+  // tinted "shell" layer near the rim for a double-layer 3D glass feel.
+  _drawGlassBody(ctx, cx, cy, R) {
+    const body = ctx.createRadialGradient(cx - R * 0.28, cy - R * 0.32, R * 0.05, cx, cy, R);
+    body.addColorStop(0, 'rgba(22,42,62,0.88)');
+    body.addColorStop(0.4, 'rgba(8,20,36,0.9)');
+    body.addColorStop(0.8, 'rgba(2,8,18,0.95)');
+    body.addColorStop(1, 'rgba(0,3,10,0.97)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = body; ctx.fill();
+
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
-    const spec = ctx.createRadialGradient(cx - R * 0.32, cy - R * 0.4, 1, cx - R * 0.32, cy - R * 0.4, R * 0.55);
-    spec.addColorStop(0, 'rgba(255,255,255,0.10)');
-    spec.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = spec; ctx.fill();
+    const shell = ctx.createRadialGradient(cx, cy, R * 0.82, cx, cy, R);
+    shell.addColorStop(0, 'rgba(0,212,255,0)');
+    shell.addColorStop(1, 'rgba(0,212,255,0.09)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = shell; ctx.fill();
     ctx.restore();
   },
 
-  _drawParticles(ctx, cx, cy, R, elapsed, { speedMult = 1, alphaBase = 0.05, alphaAmp = 0.04, color = '0,229,255' } = {}) {
+  // Glass reflection highlight, top-left — a soft sheen plus a small crisp
+  // specular dot for that "photorealistic glass" look.
+  _drawSpecular(ctx, cx, cy, R) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
+    const spec = ctx.createRadialGradient(cx - R * 0.32, cy - R * 0.42, 1, cx - R * 0.32, cy - R * 0.42, R * 0.58);
+    spec.addColorStop(0, 'rgba(255,255,255,0.16)');
+    spec.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+    spec.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = spec; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx - R * 0.38, cy - R * 0.48, R * 0.045, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fill();
+    ctx.restore();
+  },
+
+  // The bright rim stroke itself, with the strong outer-glow blur.
+  _drawRim(ctx, cx, cy, R, brightness, color) {
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${color},${Math.min(1, 0.6 + brightness * 0.3)})`;
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 22 + brightness * 14;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  },
+
+  // Dotted particle wave flowing along the bottom, inside the glass.
+  _drawDottedWave(ctx, cx, cy, R, elapsed, color) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
+    const baseY = cy + R * 0.4;
+    const dotCount = 22;
+    const halfWidth = R * 0.92;
+    for (let i = 0; i < dotCount; i++) {
+      const t = i / (dotCount - 1);
+      const x = cx - halfWidth + t * halfWidth * 2;
+      const dx = (x - cx) / R;
+      const mask = Math.sqrt(Math.max(0, 1 - dx * dx));
+      const y = baseY + Math.sin(x * 0.06 + elapsed / 850) * 5 * mask;
+      const alpha = (0.22 + Math.sin(elapsed / 1300 + i * 0.5) * 0.12) * mask;
+      ctx.beginPath(); ctx.arc(x, y, 1.1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color},${Math.max(0, alpha)})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  },
+
+  // Floating sparkle particles twinkling around (outside) the orb.
+  _drawSparkles(ctx, cx, cy, R, elapsed, color) {
+    if (!this._sparkles) return;
+    this._sparkles.forEach(s => {
+      const twinkle = Math.max(0, Math.sin(elapsed / s.period + s.phase));
+      const alpha = twinkle * s.maxAlpha;
+      if (alpha <= 0.01) return;
+      ctx.beginPath();
+      ctx.arc(cx + s.dx * R, cy + s.dy * R, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color},${alpha})`;
+      ctx.fill();
+    });
+  },
+
+  _drawParticles(ctx, cx, cy, R, elapsed, { speedMult = 1, alphaBase = 0.05, alphaAmp = 0.04, color = '0,212,255' } = {}) {
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
     this._particles.forEach(p => {
@@ -1343,41 +1379,53 @@ const Orb = {
     ctx.restore();
   },
 
-  // ── Phase 3 — thinking: same clean geometry as idle, but faster/more
-  // energetic, plus two smoothly rotating arcs (~2.6s/revolution) on the
-  // outer ring — the "actively processing" signature motion. Callers set
+  // ── Phase 1 (static premium glass orb) + Phase 2 (slow idle breathing).
+  // Timing unchanged from before (~9s breathing cycle) — only the visual
+  // drawn each frame is the new premium-glass style. ──
+  _renderIdle(ctx, N, cx, cy, R, elapsed) {
+    const color = '0,212,255';
+    const breathe = Math.sin((elapsed / 9000) * Math.PI * 2); // -1..1
+    const glowPulse = 0.5 + breathe * 0.18;
+    const ringPulse = 0.55 + breathe * 0.25;
+
+    ctx.clearRect(0, 0, N, N);
+    this._drawHalo(ctx, cx, cy, R, glowPulse, color);
+    this._drawRings(ctx, cx, cy, R, ringPulse, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawGlassBody(ctx, cx, cy, R);
+    this._drawSpecular(ctx, cx, cy, R);
+    this._drawRim(ctx, cx, cy, R, 0.5 + breathe * 0.5, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
+    this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1, alphaBase: 0.05, alphaAmp: 0.04, color });
+    this._drawBrand(ctx, cx, cy, breathe, color);
+  },
+
+  // ── Phase 3 — thinking: same base glass/rings/glow, but faster/more
+  // energetic, plus two smoothly rotating arcs (~2.6s/revolution, timing
+  // unchanged) — the "actively processing" signature motion. Callers set
   // this via Orb.setState('thinking') and are expected to move it on
   // (setState/pulse to 'speaking', 'error', or 'idle') once the response
   // is ready; the renderer itself has no auto-timeout. ──
   _renderThinking(ctx, N, cx, cy, R, elapsed) {
-    const color = '0,229,255';
+    const color = '0,212,255';
     const pulse = Math.sin((elapsed / 1800) * Math.PI * 2); // ~1.8s cycle
-    const glowPulse = 0.62 + pulse * 0.22;
-    const ringPulse = 0.62 + pulse * 0.18;
+    const glowPulse = 0.7 + pulse * 0.25;
+    const ringPulse = 0.75 + pulse * 0.2;
 
     ctx.clearRect(0, 0, N, N);
+    this._drawHalo(ctx, cx, cy, R, glowPulse, color);
+    this._drawRings(ctx, cx, cy, R, ringPulse, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
 
-    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.7);
-    halo.addColorStop(0, `rgba(${color},${0.22 * glowPulse})`);
-    halo.addColorStop(1, `rgba(${color},0)`);
-    ctx.beginPath(); ctx.arc(cx, cy, R * 1.7, 0, Math.PI * 2);
-    ctx.fillStyle = halo; ctx.fill();
-
-    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${color},${(0.06 - i * 0.014) * ringPulse})`;
-      ctx.lineWidth = 1; ctx.stroke();
-    });
-
-    // Two smoothly rotating arcs — the "thinking" signature motion.
+    // Two smoothly rotating arcs — unchanged ~2.6s/revolution timing.
     const rotAngle = (elapsed / 2600) * Math.PI * 2;
     const arcSpan = Math.PI / 3.4;
-    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 8;
+    ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 10;
     [0, Math.PI].forEach(offset => {
       const start = rotAngle + offset;
       ctx.beginPath();
-      ctx.arc(cx, cy, R * 1.24, start, start + arcSpan);
-      ctx.strokeStyle = `rgba(${color},0.75)`;
+      ctx.arc(cx, cy, R * 1.2, start, start + arcSpan);
+      ctx.strokeStyle = `rgba(${color},0.85)`;
       ctx.lineWidth = 2;
       ctx.stroke();
     });
@@ -1385,27 +1433,19 @@ const Orb = {
 
     this._drawGlassBody(ctx, cx, cy, R);
     this._drawSpecular(ctx, cx, cy, R);
-
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(${color},${0.62 + pulse * 0.18})`;
-    ctx.lineWidth = 1.6;
-    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 14 + pulse * 6;
-    ctx.stroke(); ctx.shadowBlur = 0;
-
-    // More active particles than idle, still contained and premium.
+    this._drawRim(ctx, cx, cy, R, 0.6 + pulse * 0.4, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
     this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 5, alphaBase: 0.1, alphaAmp: 0.08, color });
-
     this._drawBrand(ctx, cx, cy, pulse, color);
   },
 
   // ── Phase 4 — speaking: reactive glow/rim/particles driven by an
-  // "energy" value. If Orb.setAudioLevel() has been called recently, that
-  // real value is used; otherwise (today, always — no TTS/audio output
-  // exists yet) a smooth two-frequency synthetic envelope stands in, so
-  // the Orb still feels responsive without pretending to read real audio
-  // it doesn't have. ──
+  // "energy" value (unchanged formula/timing). If Orb.setAudioLevel() has
+  // been called recently, that real value is used; otherwise (today,
+  // always — no TTS/audio output exists yet) a smooth two-frequency
+  // synthetic envelope stands in. ──
   _renderSpeaking(ctx, N, cx, cy, R, elapsed) {
-    const color = '0,229,255';
+    const color = '0,212,255';
     const usingRealAudio = (performance.now() - this._audioLevelSetAt) < 400;
     const rawEnergy = usingRealAudio
       ? this._audioLevel
@@ -1413,37 +1453,20 @@ const Orb = {
     const e = Math.max(0.15, Math.min(1, rawEnergy));
 
     ctx.clearRect(0, 0, N, N);
-
-    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.6);
-    halo.addColorStop(0, `rgba(${color},${0.14 + e * 0.14})`);
-    halo.addColorStop(1, `rgba(${color},0)`);
-    ctx.beginPath(); ctx.arc(cx, cy, R * 1.6, 0, Math.PI * 2);
-    ctx.fillStyle = halo; ctx.fill();
-
-    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${color},${(0.045 + e * 0.05) - i * 0.012})`;
-      ctx.lineWidth = i === 0 ? 1 + e * 0.6 : 1;
-      ctx.stroke();
-    });
-
+    this._drawHalo(ctx, cx, cy, R, 0.5 + e * 0.5, color);
+    this._drawRings(ctx, cx, cy, R, 0.55 + e * 0.4, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
     this._drawGlassBody(ctx, cx, cy, R);
     this._drawSpecular(ctx, cx, cy, R);
-
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(${color},${0.55 + e * 0.28})`;
-    ctx.lineWidth = 1.4 + e * 0.8;
-    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 10 + e * 10;
-    ctx.stroke(); ctx.shadowBlur = 0;
-
+    this._drawRim(ctx, cx, cy, R, e, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
     this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 2.5, alphaBase: 0.06 + e * 0.05, alphaAmp: 0.05, color });
-
     this._drawBrand(ctx, cx, cy, e, color);
   },
 
   // ── Phase 5 — error/alert: orange, a couple of gentle decaying pulses
-  // over ~1.4s. Clearly different from idle/thinking/speaking, but no
-  // rapid flashing. Meant to be driven via Orb.pulse('error', ms). ──
+  // over ~1.4s (unchanged timing). Clearly different, not aggressive.
+  // Driven via Orb.pulse('error', ms). ──
   _renderError(ctx, N, cx, cy, R, elapsed) {
     const color = '255,120,70';
     const sinceState = performance.now() - this._stateChangedAt;
@@ -1451,66 +1474,34 @@ const Orb = {
     const pulse = 0.5 + Math.sin(sinceState / 220) * 0.5 * decay;
 
     ctx.clearRect(0, 0, N, N);
-
-    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.6);
-    halo.addColorStop(0, `rgba(${color},${0.1 + 0.18 * decay})`);
-    halo.addColorStop(1, `rgba(${color},0)`);
-    ctx.beginPath(); ctx.arc(cx, cy, R * 1.6, 0, Math.PI * 2);
-    ctx.fillStyle = halo; ctx.fill();
-
-    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${color},${(0.05 - i * 0.012) * (0.5 + decay * 0.5)})`;
-      ctx.lineWidth = 1; ctx.stroke();
-    });
-
+    this._drawHalo(ctx, cx, cy, R, 0.4 + decay * 0.5, color);
+    this._drawRings(ctx, cx, cy, R, 0.4 + decay * 0.4, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
     this._drawGlassBody(ctx, cx, cy, R);
     this._drawSpecular(ctx, cx, cy, R);
-
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(${color},${0.5 + pulse * 0.25})`;
-    ctx.lineWidth = 1.4;
-    ctx.shadowColor = 'rgb(255,120,70)'; ctx.shadowBlur = 8 + pulse * 8 * decay;
-    ctx.stroke(); ctx.shadowBlur = 0;
-
+    this._drawRim(ctx, cx, cy, R, pulse * decay, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
     this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1.5, alphaBase: 0.05, alphaAmp: 0.04, color });
-
     this._drawBrand(ctx, cx, cy, pulse * decay, color);
   },
 
   // ── Phase 5 — success: green, a single gentle bloom (no oscillation —
-  // calmer than error), decaying over ~1.1s. Meant to be driven via
-  // Orb.pulse('success', ms). ──
+  // calmer than error), decaying over ~1.1s (unchanged timing). Driven
+  // via Orb.pulse('success', ms). ──
   _renderSuccess(ctx, N, cx, cy, R, elapsed) {
     const color = '70,220,150';
     const sinceState = performance.now() - this._stateChangedAt;
     const bloom = Math.max(0, 1 - sinceState / 1100);
 
     ctx.clearRect(0, 0, N, N);
-
-    const halo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.7);
-    halo.addColorStop(0, `rgba(${color},${0.1 + 0.2 * bloom})`);
-    halo.addColorStop(1, `rgba(${color},0)`);
-    ctx.beginPath(); ctx.arc(cx, cy, R * 1.7, 0, Math.PI * 2);
-    ctx.fillStyle = halo; ctx.fill();
-
-    [R * 1.42, R * 1.24, R * 1.1].forEach((rr, i) => {
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${color},${(0.05 - i * 0.012) * (0.5 + bloom * 0.5)})`;
-      ctx.lineWidth = 1; ctx.stroke();
-    });
-
+    this._drawHalo(ctx, cx, cy, R, 0.4 + bloom * 0.6, color);
+    this._drawRings(ctx, cx, cy, R, 0.4 + bloom * 0.5, color);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
     this._drawGlassBody(ctx, cx, cy, R);
     this._drawSpecular(ctx, cx, cy, R);
-
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(${color},${0.55 + bloom * 0.25})`;
-    ctx.lineWidth = 1.4;
-    ctx.shadowColor = 'rgb(70,220,150)'; ctx.shadowBlur = 8 + bloom * 10;
-    ctx.stroke(); ctx.shadowBlur = 0;
-
+    this._drawRim(ctx, cx, cy, R, bloom, color);
+    this._drawDottedWave(ctx, cx, cy, R, elapsed, color);
     this._drawParticles(ctx, cx, cy, R, elapsed, { speedMult: 1.2, alphaBase: 0.05 + bloom * 0.04, alphaAmp: 0.04, color });
-
     this._drawBrand(ctx, cx, cy, bloom, color);
   },
 };
