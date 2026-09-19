@@ -199,6 +199,8 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 .dc-risk::before{content:'!';position:absolute;left:2px;color:#ff8a65;font-weight:700;}
 .dc-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid rgba(255,255,255,.08);}
 .dc-table{width:100%;border-collapse:collapse;font-size:12px;min-width:280px;}
+.dc-table-hint{display:none;font-size:10px;color:rgba(0,229,255,.5);text-align:right;margin-top:5px;letter-spacing:.02em;}
+@media(max-width:480px){.dc-table-hint{display:block;}}
 .dc-table th,.dc-table td{padding:9px 11px;text-align:left;}
 .dc-table th{background:rgba(0,229,255,.08);color:var(--cyan);font-weight:600;font-size:10px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
 .dc-table td{border-top:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.84);}
@@ -1028,7 +1030,8 @@ const DecisionUI = {
           <tbody>
             ${comparison.map(row => `<tr><td>${esc(row.criteria || '')}</td>${names.map(n => { const v = row.values && row.values[n]; return `<td>${esc(v != null && v !== '' ? String(v) : '—')}</td>`; }).join('')}</tr>`).join('')}
           </tbody>
-        </table></div>`;
+        </table></div>
+        <div class="dc-table-hint">Swipe to see all options →</div>`;
     }
 
     const assumptionsHtml = assumptions.length
