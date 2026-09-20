@@ -100,7 +100,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .hero-title{font-family:'Orbitron',monospace;font-size:clamp(44px,11vw,72px);font-weight:900;letter-spacing:.16em;color:var(--cyan);text-shadow:0 0 22px rgba(0,229,255,.32);text-align:center;line-height:1;margin-top:8px;}
 .hero-tagline{font-size:13px;font-weight:500;letter-spacing:.17em;color:rgba(255,255,255,.55);margin-top:12px;text-align:center;text-transform:uppercase;}
 .hero-subhead{font-size:14.5px;font-weight:300;color:rgba(255,255,255,.48);margin-top:12px;text-align:center;max-width:480px;line-height:1.65;}
-.home-input-wrap{display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:8px;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:28px;padding:14px 18px;box-shadow:0 12px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
+.home-input-wrap{display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:0;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:28px;padding:14px 18px;box-shadow:0 12px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
 .home-input-wrap:focus-within{border-color:rgba(0,229,255,.45);box-shadow:0 0 28px rgba(0,229,255,.12),inset 0 1px 0 rgba(255,255,255,.04);}
 .home-textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit;resize:none;line-height:1.5;max-height:110px;overflow-y:auto;}
 .home-textarea::placeholder{color:rgba(255,255,255,.28);}
@@ -124,7 +124,7 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 .action-arrow{position:absolute;right:14px;bottom:15px;font-size:13px;color:var(--cyan);opacity:0;transform:translateX(-4px);transition:opacity .2s var(--ease),transform .2s var(--ease);}
 .action-card:hover .action-arrow{opacity:1;transform:translateX(0);}
 .action-card.accent-violet .action-arrow{color:var(--violet);}
-.orb-container{width:100%;max-width:420px;margin:14px 0 30px;display:flex;justify-content:center;align-items:center;}
+.orb-container{width:100%;max-width:420px;margin:8px 0 10px;display:flex;justify-content:center;align-items:center;}
 #orb-canvas{width:100%;height:auto;display:block;max-width:100%;}
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;}
 @media(max-width:480px){.cat-grid{grid-template-columns:repeat(2,1fr);}}
@@ -336,8 +336,8 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 
   <div class="home-body">
     <h1 class="hero-title">SOFIA</h1>
-    <p class="hero-tagline">Your AI Decision Assistant</p>
-    <p class="hero-subhead">Analyze the numbers, compare your options, calculate the outcome, and decide with confidence.</p>
+    <p class="hero-tagline">AI Office Assistant</p>
+    <p class="hero-subhead">SOFIA helps you analyze, compare, calculate, and decide — so you stay in control of every business call.</p>
 
     <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
 
