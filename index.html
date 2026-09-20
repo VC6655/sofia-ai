@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{--cyan:#00e5ff;--cyan-border:rgba(0,229,255,.2);--bg:#00000a;--surface:rgba(255,255,255,.04);--text-dim:rgba(255,255,255,.45);--radius:14px;--radius-lg:18px;--safe-b:env(safe-area-inset-bottom,0px);--ease:cubic-bezier(.16,1,.3,1);--nav-glass:rgba(3,6,14,.72);--card-glow:0 10px 40px rgba(0,0,0,.35);}
+:root{--cyan:#00e5ff;--cyan-border:rgba(0,229,255,.2);--violet:#8a4fe8;--violet-border:rgba(138,79,232,.28);--bg:#00000a;--surface:rgba(255,255,255,.04);--text-dim:rgba(255,255,255,.45);--radius:14px;--radius-lg:18px;--safe-b:env(safe-area-inset-bottom,0px);--ease:cubic-bezier(.16,1,.3,1);--nav-glass:rgba(3,6,14,.72);--card-glow:0 10px 40px rgba(0,0,0,.35);}
 html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk',-apple-system,sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}
 .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,229,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.022) 1px,transparent 1px);background-size:60px 60px;}
 .screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
@@ -36,7 +36,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .dev-input{width:100%;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.22);border-radius:var(--radius);padding:12px 14px;color:#fff;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;}
 .dev-input:focus{border-color:rgba(0,229,255,.45);}
 .dev-input::placeholder{color:rgba(255,255,255,.22);}
-.btn-launch{width:100%;padding:12px;background:rgba(0,229,255,.13);border:1px solid rgba(0,229,255,.38);border-radius:var(--radius);color:var(--cyan);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;}
+.btn-launch{width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--violet));border:1px solid rgba(255,255,255,.14);border-radius:var(--radius);color:#03121a;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
 .dev-error{font-size:11px;color:#ff6b6b;margin-top:7px;display:none;}
 .dev-hint{font-size:10px;color:rgba(255,255,255,.22);margin-top:12px;line-height:1.7;}
 .dev-hint a{color:rgba(0,229,255,.55);text-decoration:none;}
@@ -53,8 +53,8 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .auth-field input::placeholder{color:rgba(255,255,255,.2);}
 .field-name{display:none;}
 .field-name.show{display:block;}
-.btn-auth-primary{width:100%;padding:13px;background:rgba(0,229,255,.16);border:1px solid rgba(0,229,255,.42);border-radius:12px;color:var(--cyan);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:5px;transition:background .2s,transform .12s var(--ease);}
-.btn-auth-primary:hover{background:rgba(0,229,255,.25);}
+.btn-auth-primary{width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--violet));border:1px solid rgba(255,255,255,.14);border-radius:12px;color:#03121a;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:5px;transition:box-shadow .2s,transform .12s var(--ease);}
+.btn-auth-primary:hover{box-shadow:0 0 20px rgba(138,79,232,.3);}
 .btn-auth-primary:active{transform:scale(.98);}
 .btn-auth-primary:disabled{opacity:.5;cursor:not-allowed;}
 .auth-divider{display:flex;align-items:center;gap:10px;margin:18px 0;}
@@ -100,7 +100,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .hero-title{font-family:'Orbitron',monospace;font-size:clamp(44px,11vw,72px);font-weight:900;letter-spacing:.16em;color:var(--cyan);text-shadow:0 0 22px rgba(0,229,255,.32);text-align:center;line-height:1;margin-top:8px;}
 .hero-tagline{font-size:13px;font-weight:500;letter-spacing:.17em;color:rgba(255,255,255,.55);margin-top:12px;text-align:center;text-transform:uppercase;}
 .hero-subhead{font-size:14.5px;font-weight:300;color:rgba(255,255,255,.48);margin-top:12px;text-align:center;max-width:480px;line-height:1.65;}
-.home-input-wrap{display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:26px;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:0 12px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
+.home-input-wrap{display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:8px;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:28px;padding:14px 18px;box-shadow:0 12px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
 .home-input-wrap:focus-within{border-color:rgba(0,229,255,.45);box-shadow:0 0 28px rgba(0,229,255,.12),inset 0 1px 0 rgba(255,255,255,.04);}
 .home-textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit;resize:none;line-height:1.5;max-height:110px;overflow-y:auto;}
 .home-textarea::placeholder{color:rgba(255,255,255,.28);}
@@ -109,14 +109,22 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 .section-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.32);text-align:center;margin:30px 0 14px;width:100%;font-weight:500;}
 .action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;}
 @media(max-width:640px){.action-grid{grid-template-columns:repeat(2,1fr);}}
-.action-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:rgba(0,229,255,.035);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(0,229,255,.16);border-radius:var(--radius-lg);padding:17px 16px;cursor:pointer;text-align:left;color:inherit;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);transition:background .22s var(--ease),border-color .22s var(--ease),transform .18s var(--ease),box-shadow .22s var(--ease);}
+.action-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:rgba(0,229,255,.035);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(0,229,255,.16);border-radius:var(--radius-lg);padding:17px 40px 17px 16px;cursor:pointer;text-align:left;color:inherit;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);transition:background .22s var(--ease),border-color .22s var(--ease),transform .18s var(--ease),box-shadow .22s var(--ease);}
 .action-card:hover{background:rgba(0,229,255,.075);border-color:rgba(0,229,255,.42);box-shadow:0 8px 24px rgba(0,229,255,.1),inset 0 1px 0 rgba(255,255,255,.04);transform:translateY(-3px);}
 .action-card:active{transform:translateY(-1px) scale(.99);background:rgba(0,229,255,.1);}
+.action-card.accent-violet{border-color:var(--violet-border);}
+.action-card.accent-violet:hover{background:rgba(138,79,232,.075);border-color:rgba(138,79,232,.45);box-shadow:0 8px 24px rgba(138,79,232,.12),inset 0 1px 0 rgba(255,255,255,.04);}
+.action-card.accent-violet:active{background:rgba(138,79,232,.1);}
 .action-icon-badge{width:32px;height:32px;border-radius:9px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0;transition:background .2s var(--ease),transform .2s var(--ease);}
 .action-card:hover .action-icon-badge{background:rgba(0,229,255,.16);transform:scale(1.06);}
+.action-icon-badge.accent-violet{background:rgba(138,79,232,.14);border-color:var(--violet-border);color:var(--violet);}
+.action-card:hover .action-icon-badge.accent-violet{background:rgba(138,79,232,.2);}
 .action-title{font-size:14.5px;font-weight:600;color:#fff;letter-spacing:.01em;}
 .action-desc{font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.45);}
-.orb-container{width:100%;max-width:420px;margin:34px 0 6px;display:flex;justify-content:center;align-items:center;}
+.action-arrow{position:absolute;right:14px;bottom:15px;font-size:13px;color:var(--cyan);opacity:0;transform:translateX(-4px);transition:opacity .2s var(--ease),transform .2s var(--ease);}
+.action-card:hover .action-arrow{opacity:1;transform:translateX(0);}
+.action-card.accent-violet .action-arrow{color:var(--violet);}
+.orb-container{width:100%;max-width:420px;margin:14px 0 30px;display:flex;justify-content:center;align-items:center;}
 #orb-canvas{width:100%;height:auto;display:block;max-width:100%;}
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;}
 @media(max-width:480px){.cat-grid{grid-template-columns:repeat(2,1fr);}}
@@ -144,7 +152,7 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 #chat-screen{overflow:hidden;}
 .chat-navbar{width:100%;max-width:860px;padding:13px 18px;display:flex;align-items:center;gap:11px;flex-shrink:0;background:var(--nav-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.05);}
 .chat-info{display:flex;align-items:center;gap:9px;flex:1;}
-.orb-mini{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 38% 35%,rgba(0,229,255,.4),rgba(0,50,100,.5));border:1px solid rgba(0,229,255,.45);box-shadow:0 0 10px rgba(0,229,255,.28);animation:orb-pulse 3s ease-in-out infinite;}
+.orb-mini{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 38% 35%,rgba(0,229,255,.45),rgba(138,79,232,.35) 65%,rgba(10,10,25,.5));border:1px solid rgba(0,229,255,.45);box-shadow:0 0 10px rgba(0,229,255,.28);animation:orb-pulse 3s ease-in-out infinite;}
 @keyframes orb-pulse{0%,100%{box-shadow:0 0 10px rgba(0,229,255,.28);}50%{box-shadow:0 0 20px rgba(0,229,255,.52);}}
 .chat-name{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;letter-spacing:.13em;color:var(--cyan);}
 .chat-status{font-size:11px;color:rgba(0,229,255,.55);letter-spacing:.04em;}
@@ -170,12 +178,12 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 .typing-dot:nth-child(3){animation-delay:.4s;}
 @keyframes typing{0%,60%,100%{opacity:.3;transform:translateY(0);}30%{opacity:1;transform:translateY(-4px);}}
 .chat-input-area{width:100%;max-width:860px;padding:10px 18px calc(14px + var(--safe-b));flex-shrink:0;}
-.chat-input-wrap{display:flex;align-items:center;gap:9px;background:rgba(0,229,255,.035);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.18);border-radius:var(--radius-lg);padding:10px 13px;box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
+.chat-input-wrap{display:flex;align-items:center;gap:9px;background:rgba(0,229,255,.035);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.18);border-radius:24px;padding:10px 15px;box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
 .chat-input-wrap:focus-within{border-color:rgba(0,229,255,.38);box-shadow:0 0 24px rgba(0,229,255,.09),inset 0 1px 0 rgba(255,255,255,.04);}
 .chat-textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:14px;font-family:inherit;resize:none;line-height:1.5;max-height:100px;overflow-y:auto;}
 .chat-textarea::placeholder{color:rgba(255,255,255,.25);}
-.btn-send{flex-shrink:0;min-width:36px;min-height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.18);border:1px solid rgba(0,229,255,.38);color:var(--cyan);cursor:pointer;transition:background .18s var(--ease),box-shadow .18s var(--ease),transform .12s var(--ease);}
-.btn-send:hover{background:rgba(0,229,255,.28);box-shadow:0 0 12px rgba(0,229,255,.28);}
+.btn-send{flex-shrink:0;min-width:36px;min-height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--cyan),var(--violet));border:1px solid rgba(255,255,255,.14);color:#fff;cursor:pointer;transition:box-shadow .18s var(--ease),transform .12s var(--ease);}
+.btn-send:hover{box-shadow:0 0 16px rgba(138,79,232,.4);}
 .btn-send:active{transform:scale(.9);}
 .guest-counter{font-size:10px;color:rgba(255,200,0,.6);text-align:center;padding:4px 0 2px;letter-spacing:.04em;}
 
@@ -331,6 +339,8 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
     <p class="hero-tagline">Your AI Decision Assistant</p>
     <p class="hero-subhead">Analyze the numbers, compare your options, calculate the outcome, and decide with confidence.</p>
 
+    <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
+
     <div class="home-input-wrap">
       <textarea class="home-textarea" id="home-input" placeholder="Ask Sofia to analyze, compare, or calculate anything..." rows="1" onkeydown="App.homeKeydown(event)" oninput="UI.autoResize(this)"></textarea>
       <button class="icon-btn" id="home-mic-btn" onclick="Voice.toggle('home-input','home-mic-btn')" title="Voice input">
@@ -345,25 +355,27 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
         <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
         <div class="action-title">Analyze</div>
         <div class="action-desc">Break down a financial or business question in plain terms.</div>
+        <span class="action-arrow">→</span>
       </button>
-      <button type="button" class="action-card" onclick="App.quickAction('compare')">
-        <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+      <button type="button" class="action-card accent-violet" onclick="App.quickAction('compare')">
+        <div class="action-icon-badge accent-violet"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
         <div class="action-title">Compare</div>
         <div class="action-desc">Weigh two or more options side by side.</div>
+        <span class="action-arrow">→</span>
       </button>
       <button type="button" class="action-card" onclick="App.quickAction('calculate')">
         <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>
         <div class="action-title">Calculate</div>
         <div class="action-desc">Work out EMIs, returns, margins, and more — with steps shown.</div>
+        <span class="action-arrow">→</span>
       </button>
-      <button type="button" class="action-card" onclick="App.quickAction('decide')">
-        <div class="action-icon-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 10.5 15 16 9"/></svg></div>
+      <button type="button" class="action-card accent-violet" onclick="App.quickAction('decide')">
+        <div class="action-icon-badge accent-violet"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 10.5 15 16 9"/></svg></div>
         <div class="action-title">Decide</div>
         <div class="action-desc">Get a clear recommendation and a concrete next step.</div>
+        <span class="action-arrow">→</span>
       </button>
     </div>
-
-    <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
 
     <p class="section-label">Or start a themed chat</p>
     <div class="cat-grid">
@@ -1215,6 +1227,7 @@ const Orb = {
         period: 1800 + Math.random() * 1800,
         phase: Math.random() * Math.PI * 2,
         maxAlpha: 0.35 + Math.random() * 0.35,
+        violet: Math.random() < 0.35,
       };
     });
     this._computeBrandLayout(ctx, R);
@@ -1277,8 +1290,17 @@ const Orb = {
   // stays consistent across idle/thinking/speaking/error/success — only
   // the energy/color driving them differs per state. ──
 
-  // Strong, soft outer glow (the "40px blur" premium halo).
-  _drawHalo(ctx, cx, cy, R, intensity, color) {
+  // Strong, soft outer glow (the "40px blur" premium halo). An optional
+  // secondColor blends a second, offset glow underneath for the "cyan +
+  // violet spectral" identity look — restrained, not a full rainbow.
+  _drawHalo(ctx, cx, cy, R, intensity, color, secondColor) {
+    if (secondColor) {
+      const violetHalo = ctx.createRadialGradient(cx + R * 0.3, cy + R * 0.35, R * 0.5, cx + R * 0.3, cy + R * 0.35, R * 1.7);
+      violetHalo.addColorStop(0, `rgba(${secondColor},${0.16 * intensity})`);
+      violetHalo.addColorStop(1, `rgba(${secondColor},0)`);
+      ctx.beginPath(); ctx.arc(cx, cy, R * 2.0, 0, Math.PI * 2);
+      ctx.fillStyle = violetHalo; ctx.fill();
+    }
     const halo = ctx.createRadialGradient(cx, cy, R * 0.65, cx, cy, R * 2.0);
     halo.addColorStop(0, `rgba(${color},${0.28 * intensity})`);
     halo.addColorStop(0.5, `rgba(${color},${0.1 * intensity})`);
@@ -1287,10 +1309,15 @@ const Orb = {
     ctx.fillStyle = halo; ctx.fill();
   },
 
-  // Two thin neon rings around the body.
-  _drawRings(ctx, cx, cy, R, energy, color) {
-    [R * 1.32, R * 1.12].forEach((rr, i) => {
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+  // Two thin neon rings around the body. When tilted is true, they're drawn
+  // as slightly tilted ellipses at different angles (an "orbital" motif)
+  // instead of plain concentric circles.
+  _drawRings(ctx, cx, cy, R, energy, color, tilted) {
+    const ringSpecs = tilted
+      ? [{ rr: R * 1.34, ry: R * 0.52, rot: -0.38 }, { rr: R * 1.22, ry: R * 0.46, rot: 0.26 }]
+      : [{ rr: R * 1.32, ry: R * 1.32, rot: 0 }, { rr: R * 1.12, ry: R * 1.12, rot: 0 }];
+    ringSpecs.forEach(({ rr, ry, rot }, i) => {
+      ctx.beginPath(); ctx.ellipse(cx, cy, rr, ry, rot, 0, Math.PI * 2);
       ctx.strokeStyle = `rgba(${color},${Math.max(0, (0.4 - i * 0.12) * energy)})`;
       ctx.lineWidth = 1;
       ctx.shadowColor = `rgb(${color})`; ctx.shadowBlur = 6;
@@ -1367,16 +1394,19 @@ const Orb = {
     ctx.restore();
   },
 
-  // Floating sparkle particles twinkling around (outside) the orb.
-  _drawSparkles(ctx, cx, cy, R, elapsed, color) {
+  // Floating sparkle particles twinkling around (outside) the orb. When
+  // violetColor is given, roughly a third of the sparkles twinkle in that
+  // secondary tone instead of the primary color, for the "spectral" feel.
+  _drawSparkles(ctx, cx, cy, R, elapsed, color, violetColor) {
     if (!this._sparkles) return;
     this._sparkles.forEach(s => {
       const twinkle = Math.max(0, Math.sin(elapsed / s.period + s.phase));
       const alpha = twinkle * s.maxAlpha;
       if (alpha <= 0.01) return;
+      const useColor = (violetColor && s.violet) ? violetColor : color;
       ctx.beginPath();
       ctx.arc(cx + s.dx * R, cy + s.dy * R, s.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${color},${alpha})`;
+      ctx.fillStyle = `rgba(${useColor},${alpha})`;
       ctx.fill();
     });
   },
@@ -1401,14 +1431,15 @@ const Orb = {
   // drawn each frame is the new premium-glass style. ──
   _renderIdle(ctx, N, cx, cy, R, elapsed) {
     const color = '0,212,255';
+    const violet = '138,79,232';
     const breathe = Math.sin((elapsed / 9000) * Math.PI * 2); // -1..1
     const glowPulse = 0.5 + breathe * 0.18;
     const ringPulse = 0.55 + breathe * 0.25;
 
     ctx.clearRect(0, 0, N, N);
-    this._drawHalo(ctx, cx, cy, R, glowPulse, color);
-    this._drawRings(ctx, cx, cy, R, ringPulse, color);
-    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawHalo(ctx, cx, cy, R, glowPulse, color, violet);
+    this._drawRings(ctx, cx, cy, R, ringPulse, color, true);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color, violet);
     this._drawGlassBody(ctx, cx, cy, R);
     this._drawSpecular(ctx, cx, cy, R);
     this._drawRim(ctx, cx, cy, R, 0.5 + breathe * 0.5, color);
@@ -1428,14 +1459,15 @@ const Orb = {
   // auto-timeout. ──
   _renderThinking(ctx, N, cx, cy, R, elapsed) {
     const color = '0,212,255';
+    const violet = '138,79,232';
     const pulse = Math.sin((elapsed / 1800) * Math.PI * 2); // ~1.8s cycle
     const glowPulse = 0.7 + pulse * 0.25;
     const ringPulse = 0.75 + pulse * 0.2;
 
     ctx.clearRect(0, 0, N, N);
-    this._drawHalo(ctx, cx, cy, R, glowPulse, color);
-    this._drawRings(ctx, cx, cy, R, ringPulse, color);
-    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawHalo(ctx, cx, cy, R, glowPulse, color, violet);
+    this._drawRings(ctx, cx, cy, R, ringPulse, color, true);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color, violet);
 
     // Traveling energy nodes with fading trails — each moves at its own
     // speed so they drift in and out of sync, unlike a uniform spinner.
@@ -1472,6 +1504,7 @@ const Orb = {
   // synthetic envelope stands in. ──
   _renderSpeaking(ctx, N, cx, cy, R, elapsed) {
     const color = '0,212,255';
+    const violet = '138,79,232';
     const usingRealAudio = (performance.now() - this._audioLevelSetAt) < 400;
     const rawEnergy = usingRealAudio
       ? this._audioLevel
@@ -1479,9 +1512,9 @@ const Orb = {
     const e = Math.max(0.15, Math.min(1, rawEnergy));
 
     ctx.clearRect(0, 0, N, N);
-    this._drawHalo(ctx, cx, cy, R, 0.5 + e * 0.5, color);
-    this._drawRings(ctx, cx, cy, R, 0.55 + e * 0.4, color);
-    this._drawSparkles(ctx, cx, cy, R, elapsed, color);
+    this._drawHalo(ctx, cx, cy, R, 0.5 + e * 0.5, color, violet);
+    this._drawRings(ctx, cx, cy, R, 0.55 + e * 0.4, color, true);
+    this._drawSparkles(ctx, cx, cy, R, elapsed, color, violet);
     this._drawGlassBody(ctx, cx, cy, R);
     this._drawSpecular(ctx, cx, cy, R);
     this._drawRim(ctx, cx, cy, R, e, color);
