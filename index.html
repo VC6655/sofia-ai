@@ -103,8 +103,23 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .hero-title{font-family:'Orbitron',monospace;font-size:clamp(44px,11vw,72px);font-weight:900;letter-spacing:.16em;color:var(--cyan);text-shadow:0 0 22px rgba(0,229,255,.32);text-align:center;line-height:1;margin-top:8px;}
 .hero-tagline{font-size:13px;font-weight:500;letter-spacing:.17em;color:rgba(255,255,255,.55);margin-top:12px;text-align:center;text-transform:uppercase;}
 .hero-subhead{font-size:14.5px;font-weight:300;color:rgba(255,255,255,.48);margin-top:12px;text-align:center;max-width:480px;line-height:1.65;}
-.home-input-wrap{display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:0;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:28px;padding:14px 18px;box-shadow:0 12px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
+.home-input-wrap{position:relative;z-index:5;display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:0;background:rgba(0,229,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.22);border-radius:28px;padding:14px 18px;box-shadow:0 12px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
 .home-input-wrap:focus-within{border-color:rgba(0,229,255,.45);box-shadow:0 0 28px rgba(0,229,255,.12),inset 0 1px 0 rgba(255,255,255,.04);}
+/* Tools: a shortcut into the same four actions as the cards below. */
+.tools-wrap{position:relative;flex-shrink:0;}
+.tools-chip{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 10px;color:rgba(255,255,255,.72);font-size:12.5px;font-weight:500;font-family:inherit;cursor:pointer;transition:background .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease);}
+.tools-chip:hover{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.32);color:#fff;}
+.tools-chip[aria-expanded="true"]{background:rgba(0,229,255,.1);border-color:rgba(0,229,255,.4);color:#fff;}
+.tools-caret{transition:transform .2s var(--ease);}
+.tools-chip[aria-expanded="true"] .tools-caret{transform:rotate(180deg);}
+.tools-menu{position:absolute;bottom:calc(100% + 10px);left:0;width:270px;max-width:78vw;background:rgba(10,15,28,.96);backdrop-filter:blur(var(--tier1-blur));-webkit-backdrop-filter:blur(var(--tier1-blur));border:1px solid var(--tier1-border);border-radius:var(--radius-lg);padding:6px;box-shadow:0 18px 44px rgba(0,0,0,.6),var(--specular);opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .18s var(--ease),transform .18s var(--ease),visibility .18s;z-index:30;}
+.tools-menu.show{opacity:1;visibility:visible;transform:translateY(0);}
+.tools-item{display:flex;align-items:flex-start;gap:10px;width:100%;background:transparent;border:none;border-radius:11px;padding:9px 10px;color:var(--cyan);text-align:left;font-family:inherit;cursor:pointer;transition:background .16s var(--ease);}
+.tools-item:hover{background:rgba(0,229,255,.09);}
+.tools-item svg{margin-top:2px;flex-shrink:0;}
+.tools-item span{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:rgba(255,255,255,.45);line-height:1.4;}
+.tools-item b{font-size:13px;font-weight:600;color:#fff;}
+@media(max-width:520px){.tools-label{display:none;}.tools-chip{padding:7px 8px;}}
 .home-textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit;resize:none;line-height:1.5;max-height:110px;overflow-y:auto;}
 .home-textarea::placeholder{color:rgba(255,255,255,.28);}
 .hint-text{margin-top:9px;font-size:11px;letter-spacing:.05em;color:rgba(255,255,255,.18);text-align:center;}
@@ -348,9 +363,37 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
     <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
 
     <div class="home-input-wrap">
+      <div class="tools-wrap">
+        <button type="button" class="tools-chip" id="tools-chip" onclick="App.toggleTools(event)" aria-haspopup="true" aria-expanded="false" title="Sofia's tools">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span class="tools-label">Tools</span>
+          <svg class="tools-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="tools-menu" id="tools-menu" role="menu">
+          <button type="button" class="tools-item" role="menuitem" onclick="App.runTool('analyze')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            <span><b>Analyze</b>Break down a business question</span>
+          </button>
+          <button type="button" class="tools-item" role="menuitem" onclick="App.runTool('compare')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            <span><b>Compare</b>Weigh options side by side</span>
+          </button>
+          <button type="button" class="tools-item" role="menuitem" onclick="App.runTool('calculate')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+            <span><b>Calculate</b>EMIs, returns, margins with steps</span>
+          </button>
+          <button type="button" class="tools-item" role="menuitem" onclick="App.runTool('decide')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 10.5 15 16 9"/></svg>
+            <span><b>Decide</b>Get a recommendation and next step</span>
+          </button>
+        </div>
+      </div>
       <textarea class="home-textarea" id="home-input" placeholder="Ask Sofia to analyze, compare, or calculate anything..." rows="1" onkeydown="App.homeKeydown(event)" oninput="UI.autoResize(this)"></textarea>
       <button class="icon-btn" id="home-mic-btn" onclick="Voice.toggle('home-input','home-mic-btn')" title="Voice input">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <button class="btn-send" id="home-send-btn" onclick="App.homeSend()" title="Send">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
     <p class="hint-text"><kbd>Enter</kbd> send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> new line</p>
@@ -1761,18 +1804,41 @@ const App = {
   },
 
   // ── Home ──
+  homeSend() {
+    const text = document.getElementById('home-input').value.trim();
+    if (!text) return;
+    this.startChat('general');
+    setTimeout(() => {
+      document.getElementById('chat-input').value = text;
+      UI.autoResize(document.getElementById('chat-input'));
+      this.sendMessage();
+    }, 120);
+  },
+
   homeKeydown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      const text = document.getElementById('home-input').value.trim();
-      if (!text) return;
-      this.startChat('general');
-      setTimeout(() => {
-        document.getElementById('chat-input').value = text;
-        UI.autoResize(document.getElementById('chat-input'));
-        this.sendMessage();
-      }, 120);
+      this.homeSend();
     }
+  },
+
+  toggleTools(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('tools-menu');
+    const open = menu.classList.toggle('show');
+    document.getElementById('tools-chip').setAttribute('aria-expanded', open);
+  },
+
+  closeTools() {
+    document.getElementById('tools-menu')?.classList.remove('show');
+    document.getElementById('tools-chip')?.setAttribute('aria-expanded', 'false');
+  },
+
+  // Each tool routes into an existing capability via quickAction — the menu is
+  // a shortcut to the same four actions, not a separate code path.
+  runTool(type) {
+    this.closeTools();
+    this.quickAction(type);
   },
 
   goHome() {
@@ -1892,6 +1958,11 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     document.getElementById('home-input')?.focus();
   }
+  if (e.key === 'Escape') App.closeTools();
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.tools-wrap')) App.closeTools();
 });
 
 if (window.visualViewport) {
