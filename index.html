@@ -158,8 +158,8 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 #chat-screen{overflow:hidden;}
 .chat-navbar{width:100%;max-width:860px;padding:13px 18px;display:flex;align-items:center;gap:11px;flex-shrink:0;background:var(--nav-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.05);}
 .chat-info{display:flex;align-items:center;gap:9px;flex:1;}
-.orb-mini{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 38% 35%,rgba(0,229,255,.45),rgba(138,79,232,.35) 65%,rgba(10,10,25,.5));border:1px solid rgba(0,229,255,.45);box-shadow:0 0 10px rgba(0,229,255,.28);animation:orb-pulse 3s ease-in-out infinite;}
-@keyframes orb-pulse{0%,100%{box-shadow:0 0 10px rgba(0,229,255,.28);}50%{box-shadow:0 0 20px rgba(0,229,255,.52);}}
+.orb-mini{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 38% 35%,rgba(0,128,255,.5),rgba(138,79,232,.35) 65%,rgba(10,10,25,.5));border:1px solid rgba(0,128,255,.5);box-shadow:0 0 10px rgba(0,128,255,.3);animation:orb-pulse 3s ease-in-out infinite;}
+@keyframes orb-pulse{0%,100%{box-shadow:0 0 10px rgba(0,128,255,.3);}50%{box-shadow:0 0 20px rgba(0,128,255,.55);}}
 .chat-name{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;letter-spacing:.13em;color:var(--cyan);}
 .chat-status{font-size:11px;color:rgba(0,229,255,.55);letter-spacing:.04em;}
 .btn-clear{min-width:34px;min-height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);cursor:pointer;color:rgba(255,255,255,.45);transition:background .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease),transform .12s var(--ease);}
@@ -1276,7 +1276,7 @@ const Orb = {
   // (electric blue for idle/thinking/speaking, orange for error, green for
   // success) — the default here only matters if something calls this
   // directly without one.
-  _drawBrand(ctx, cx, cy, energy, color = '0,212,255') {
+  _drawBrand(ctx, cx, cy, energy, color = '0,128,255') {
     if (!this._brand) return;
     const { label, fontSize, letterSpacing, widths, totalWidth } = this._brand;
     ctx.font = `700 ${fontSize}px 'Orbitron', monospace`;
@@ -1346,8 +1346,8 @@ const Orb = {
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.clip();
     const shell = ctx.createRadialGradient(cx, cy, R * 0.82, cx, cy, R);
-    shell.addColorStop(0, 'rgba(0,212,255,0)');
-    shell.addColorStop(1, 'rgba(0,212,255,0.09)');
+    shell.addColorStop(0, 'rgba(0,128,255,0)');
+    shell.addColorStop(1, 'rgba(0,128,255,0.09)');
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
     ctx.fillStyle = shell; ctx.fill();
     ctx.restore();
@@ -1417,7 +1417,7 @@ const Orb = {
     });
   },
 
-  _drawParticles(ctx, cx, cy, R, elapsed, { speedMult = 1, alphaBase = 0.05, alphaAmp = 0.04, color = '0,212,255' } = {}) {
+  _drawParticles(ctx, cx, cy, R, elapsed, { speedMult = 1, alphaBase = 0.05, alphaAmp = 0.04, color = '0,128,255' } = {}) {
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, R - 3, 0, Math.PI * 2); ctx.clip();
     this._particles.forEach(p => {
@@ -1436,7 +1436,7 @@ const Orb = {
   // Timing unchanged from before (~9s breathing cycle) — only the visual
   // drawn each frame is the new premium-glass style. ──
   _renderIdle(ctx, N, cx, cy, R, elapsed) {
-    const color = '0,212,255';
+    const color = '0,128,255';
     const violet = '138,79,232';
     const breathe = Math.sin((elapsed / 9000) * Math.PI * 2); // -1..1
     const glowPulse = 0.5 + breathe * 0.18;
@@ -1464,7 +1464,7 @@ const Orb = {
   // 'idle') once the response is ready; the renderer itself has no
   // auto-timeout. ──
   _renderThinking(ctx, N, cx, cy, R, elapsed) {
-    const color = '0,212,255';
+    const color = '0,128,255';
     const violet = '138,79,232';
     const pulse = Math.sin((elapsed / 1800) * Math.PI * 2); // ~1.8s cycle
     const glowPulse = 0.7 + pulse * 0.25;
@@ -1509,7 +1509,7 @@ const Orb = {
   // always — no TTS/audio output exists yet) a smooth two-frequency
   // synthetic envelope stands in. ──
   _renderSpeaking(ctx, N, cx, cy, R, elapsed) {
-    const color = '0,212,255';
+    const color = '0,128,255';
     const violet = '138,79,232';
     const usingRealAudio = (performance.now() - this._audioLevelSetAt) < 400;
     const rawEnergy = usingRealAudio
