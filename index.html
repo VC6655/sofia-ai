@@ -570,6 +570,124 @@ const CalcMode = {
 };
 
 /* ═══════════════════════════════════════
+   EMI CALC ENGINE — deterministic reducing-balance EMI
+   math, independent of the AI/model. When the user's own
+   question is specifically an EMI question and principal/
+   rate/tenure can be parsed from their own words, the
+   AI-returned calc-card's question/inputs/method/result
+   are replaced with this function's output before the
+   reply is stored or rendered. The model may still supply
+   the explanatory step-by-step wording, but never the
+   final number. Never invents a value it can't parse — if
+   an input is missing/invalid it leaves the reply as-is.
+   Calc-card schema and CalcUI's renderer are unchanged.
+═══════════════════════════════════════ */
+const EmiCalc = {
+  isEmiQuery(text) {
+    const t = (text || '').toLowerCase();
+    return /\bemi\b/.test(t) || (/\bmonthly (payment|installment)\b/.test(t) && /\b(loan|principal|borrow)\b/.test(t));
+  },
+
+  // Best-effort extraction of principal / annual rate % / tenure (months) straight
+  // from the user's own words — the one source of truth for what was actually
+  // asked, independent of whatever the model echoes back in its own inputs.
+  // Rate and tenure are pulled out (and removed from the working text) first so
+  // their numbers can't be mistaken for the principal.
+  extractInputs(text) {
+    let working = text || '';
+    let annualRatePercent = null, tenureMonths = null, principal = null, m;
+
+    const rateRe = /(\d+(?:\.\d+)?)\s*(?:%|percent\b)/i;
+    if ((m = rateRe.exec(working))) {
+      annualRatePercent = parseFloat(m[1]);
+      working = working.slice(0, m.index) + working.slice(m.index + m[0].length);
+    }
+
+    const yearsRe = /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i;
+    const monthsRe = /(\d+(?:\.\d+)?)\s*(?:months?|mos?)\b/i;
+    if ((m = yearsRe.exec(working))) {
+      tenureMonths = Math.round(parseFloat(m[1]) * 12);
+      working = working.slice(0, m.index) + working.slice(m.index + m[0].length);
+    } else if ((m = monthsRe.exec(working))) {
+      tenureMonths = Math.round(parseFloat(m[1]));
+      working = working.slice(0, m.index) + working.slice(m.index + m[0].length);
+    }
+
+    const croreRe = /(\d+(?:\.\d+)?)\s*crores?\b/i;
+    const lakhRe = /(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|lac|lacs)\b/i;
+    const currRe = /(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)/i;
+    const groupedRe = /\b\d{1,3}(?:,\d{2,3})+(?:\.\d+)?\b/;
+    const plainRe = /\b\d{4,}(?:\.\d+)?\b/;
+    if ((m = croreRe.exec(working))) principal = parseFloat(m[1]) * 1e7;
+    else if ((m = lakhRe.exec(working))) principal = parseFloat(m[1]) * 1e5;
+    else if ((m = currRe.exec(working))) principal = parseFloat(m[1].replace(/,/g, ''));
+    else if ((m = groupedRe.exec(working))) principal = parseFloat(m[0].replace(/,/g, ''));
+    else if ((m = plainRe.exec(working))) principal = parseFloat(m[0]);
+
+    return { principal, annualRatePercent, tenureMonths };
+  },
+
+  // Deterministic reducing-balance EMI: EMI = P × r × (1+r)^n / ((1+r)^n − 1),
+  // r = monthly rate. A 0% rate falls back to a straight principal/n split
+  // (the formula above is undefined at r=0 since (1+r)^n-1 would be 0).
+  compute(principal, annualRatePercent, tenureMonths) {
+    const errors = [];
+    if (principal == null || isNaN(principal)) errors.push('missing or invalid principal');
+    else if (principal <= 0) errors.push('principal must be greater than zero');
+    if (annualRatePercent == null || isNaN(annualRatePercent)) errors.push('missing or invalid interest rate');
+    else if (annualRatePercent < 0) errors.push('interest rate cannot be negative');
+    if (tenureMonths == null || isNaN(tenureMonths)) errors.push('missing or invalid tenure');
+    else if (tenureMonths <= 0) errors.push('tenure must be greater than zero');
+    if (errors.length) return { ok: false, errors };
+
+    const P = principal, n = Math.round(tenureMonths);
+    let emi;
+    if (annualRatePercent === 0) {
+      emi = P / n;
+    } else {
+      const r = annualRatePercent / 12 / 100;
+      const factor = Math.pow(1 + r, n);
+      emi = (P * r * factor) / (factor - 1);
+    }
+    return { ok: true, principal: P, annualRatePercent, tenureMonths: n, emi: Math.round(emi * 100) / 100 };
+  },
+
+  _formatINR(n) {
+    return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  },
+
+  // Entry point called from App.sendMessage(): given the user's own question and
+  // the raw model reply for a 'calc' response, replaces the calc-card's question/
+  // inputs/method/result with deterministically computed values when (and only
+  // when) this is an EMI question with enough info to compute. Returns the reply
+  // untouched when it isn't an EMI question, has no calc-card, or is missing/
+  // invalid inputs — it never invents a number to fill the gap.
+  applyToReply(userText, reply) {
+    if (!this.isEmiQuery(userText)) return reply;
+    const parsed = CalcUI.extract(reply);
+    if (!parsed) return reply;
+
+    const { principal, annualRatePercent, tenureMonths } = this.extractInputs(userText);
+    const result = this.compute(principal, annualRatePercent, tenureMonths);
+    if (!result.ok) return reply;
+
+    const data = parsed.data;
+    data.question = `Monthly EMI for a loan of ${this._formatINR(result.principal)} at ${result.annualRatePercent}% annual interest for ${result.tenureMonths} months`;
+    data.inputs = [
+      { label: 'Principal (P)', value: this._formatINR(result.principal) },
+      { label: 'Annual Interest Rate', value: `${result.annualRatePercent}% p.a.` },
+      { label: 'Tenure', value: `${result.tenureMonths} months` },
+    ];
+    data.method = 'Reducing-balance EMI formula: EMI = P × r × (1+r)^n / ((1+r)^n − 1), r = monthly rate';
+    data.result = { label: 'Monthly EMI', value: `${this._formatINR(result.emi)} per month` };
+
+    return (parsed.before ? parsed.before + '\n\n' : '')
+      + '```calc-card\n' + JSON.stringify(data) + '\n```'
+      + (parsed.after ? '\n\n' + parsed.after : '');
+  },
+};
+
+/* ═══════════════════════════════════════
    STATE
 ═══════════════════════════════════════ */
 const State = {
@@ -1814,7 +1932,11 @@ const App = {
       const responseType = DecisionMode.isDecisionQuery(text) ? 'decision'
                           : CalcMode.isCalculationQuery(text) ? 'calc'
                           : null;
-      const reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category, responseType);
+      let reply = await SofiaAPI.chat(State.history.slice(-CONFIG.maxHistory), State.category, responseType);
+      // EMI answers must use deterministic JS math, not the model's arithmetic —
+      // this only overrides the calc-card's numeric fields, and only when the
+      // question is an EMI question with parseable, valid inputs.
+      if (responseType === 'calc') reply = EmiCalc.applyToReply(text, reply);
       UI.removeTyping(); UI.setStatus('Online');
       UI.addMessage('sofia', reply);
       State.history.push({ role: 'assistant', content: reply });
