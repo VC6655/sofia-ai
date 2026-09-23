@@ -87,7 +87,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .btn-logout:active{transform:scale(.98);}
 
 /* ── NAVBAR (home) ── */
-.navbar{position:sticky;top:0;z-index:2;width:100%;max-width:860px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:var(--nav-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.05);}
+.navbar{position:sticky;top:0;z-index:2;width:100%;max-width:860px;padding:16px 20px;display:flex;justify-content:flex-end;align-items:center;flex-shrink:0;background:var(--nav-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.05);}
 .badge{display:flex;align-items:center;gap:6px;background:rgba(0,229,255,.05);border:1px solid var(--cyan-border);border-radius:20px;padding:6px 13px;font-size:11px;letter-spacing:.07em;color:rgba(0,229,255,.8);}
 .dot-live{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 7px var(--cyan);animation:blink 2.2s ease-in-out infinite;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
@@ -350,7 +350,6 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 <!-- ═══════════ HOME SCREEN ═══════════ -->
 <div class="screen hidden" id="home-screen">
   <nav class="navbar">
-    <div class="badge"><span class="dot-live"></span>SOFIA AI v1.0</div>
     <div class="nav-right">
       <button type="button" class="nav-signin" id="nav-signin" onclick="App.openAuth('home')">Sign In</button>
       <button type="button" class="nav-avatar hidden" id="nav-avatar" onclick="App.showProfile()">?</button>
@@ -359,8 +358,6 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 
   <div class="home-body">
     <h1 class="hero-title">SOFIA</h1>
-    <p class="hero-tagline">AI Office Assistant</p>
-    <p class="hero-subhead">SOFIA helps you analyze, compare, calculate, and decide — so you stay in control of every business call.</p>
 
     <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
 
@@ -390,7 +387,7 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
           </button>
         </div>
       </div>
-      <textarea class="home-textarea" id="home-input" placeholder="Ask Sofia to analyze, compare, or calculate anything..." rows="1" onkeydown="App.homeKeydown(event)" oninput="UI.autoResize(this)"></textarea>
+      <textarea class="home-textarea" id="home-input" placeholder="Ask Sofia anything..." rows="1" onkeydown="App.homeKeydown(event)" oninput="UI.autoResize(this)"></textarea>
       <button class="icon-btn" id="home-mic-btn" onclick="Voice.toggle('home-input','home-mic-btn')" title="Voice input">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
@@ -459,8 +456,7 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="chat-info">
-      <div class="orb-mini"></div>
-      <div><div class="chat-name">SOFIA</div><div class="chat-status" id="chat-status">Online</div></div>
+      <div class="chat-name">SOFIA</div>
     </div>
     <button class="btn-clear" onclick="App.clearChat()" title="Clear chat">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
@@ -1793,8 +1789,6 @@ const App = {
     State.history = [];
     document.getElementById('messages').innerHTML = '';
     UI.show('chat-screen');
-    UI.addMessage('sofia', WELCOME[category]);
-    State.history.push({ role: 'assistant', content: WELCOME[category] });
     UI.updateGuestCounter();
     setTimeout(() => document.getElementById('chat-input')?.focus(), 150);
   },
