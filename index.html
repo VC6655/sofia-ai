@@ -104,7 +104,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Space Grotesk
 .hero-title{font-family:'Orbitron',monospace;font-size:clamp(44px,11vw,72px);font-weight:900;letter-spacing:.16em;color:var(--cyan);text-shadow:0 0 1px rgba(255,255,255,.35),0 0 26px rgba(0,229,255,.34);text-align:center;line-height:1;margin-top:8px;}
 .hero-tagline{font-size:13px;font-weight:500;letter-spacing:.17em;color:rgba(255,255,255,.55);margin-top:12px;text-align:center;text-transform:uppercase;}
 .hero-subhead{font-size:14.5px;font-weight:300;color:rgba(255,255,255,.48);margin-top:12px;text-align:center;max-width:480px;line-height:1.65;}
-.home-input-wrap{position:relative;z-index:5;display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:6px;background:var(--tier1-bg);backdrop-filter:blur(var(--tier1-blur));-webkit-backdrop-filter:blur(var(--tier1-blur));border:1px solid rgba(0,229,255,.22);border-radius:28px;padding:14px 18px;box-shadow:0 12px 32px rgba(0,0,0,.3),var(--specular);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
+.home-input-wrap{position:relative;z-index:5;display:flex;align-items:center;gap:9px;width:100%;max-width:600px;margin-top:48px;background:var(--tier1-bg);backdrop-filter:blur(var(--tier1-blur));-webkit-backdrop-filter:blur(var(--tier1-blur));border:1px solid rgba(0,229,255,.22);border-radius:28px;padding:14px 18px;box-shadow:0 12px 32px rgba(0,0,0,.3),var(--specular);transition:border-color .22s var(--ease),box-shadow .22s var(--ease);}
 .home-input-wrap:focus-within{border-color:rgba(0,229,255,.45);box-shadow:0 0 28px rgba(0,229,255,.12),var(--specular);}
 /* Tools: a shortcut into the same four actions as the cards below. */
 .tools-wrap{position:relative;flex-shrink:0;}
@@ -358,8 +358,6 @@ kbd{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.16);border-r
 
   <div class="home-body">
     <h1 class="hero-title">SOFIA</h1>
-
-    <div class="orb-container"><canvas id="orb-canvas"></canvas></div>
 
     <div class="home-input-wrap">
       <div class="tools-wrap">
